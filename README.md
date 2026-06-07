@@ -24,6 +24,21 @@ scripts/gen-icons.mjs Rasterizes resources/*.svg into PNG icons
 - **App name:** تفريغ القمح
 - **Min / target SDK:** 24 / 36
 
+## Install directly on your phone (ready-made APK)
+
+A ready-to-install debug APK is published in this repo:
+[`dist/wheat-ops-1.2.0.apk`](dist/wheat-ops-1.2.0.apk).
+
+On the phone:
+
+1. Open this file on GitHub and tap **Download** (download the raw `.apk`).
+2. Open the downloaded file. Android will ask to allow installing from this
+   source — enable **"Allow from this source"** / **"Install unknown apps"**, then tap **Install**.
+3. Launch **تفريغ القمح** from the app drawer.
+
+> This is a debug-signed build for direct (sideload) installation, not a Play Store
+> release. Update the file by rebuilding (see below) and replacing it.
+
 ## Build the APK in the cloud (no setup needed)
 
 1. Open the **Actions** tab on GitHub.

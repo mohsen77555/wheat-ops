@@ -4,7 +4,10 @@ node_modules/
 # Build artifacts
 *.apk
 *.aab
-dist/
+
+# Keep the published, ready-to-install APK(s) under dist/
+!dist/
+!dist/*.apk
 
 # OS / editor
 .DS_Store
