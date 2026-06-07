@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+*.apk
+*.aab
+dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# Local SDK config
+android/local.properties
