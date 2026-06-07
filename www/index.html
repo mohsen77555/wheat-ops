@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#142C40">
+<meta name="color-scheme" content="light">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,6 +30,7 @@
 </script>
 <style>
   :root{
+    color-scheme:light;   /* light-only app: opt out of WebView force-dark / auto-darkening */
     --paper:#F1EBDD; --paper2:#FBF8F1; --card:#FFFFFF;
     --ink:#1B1813; --ink2:#615A4C; --ink3:#938A78;
     --line:#E0D8C6; --line2:#D2C8B2;
@@ -81,6 +83,7 @@
     position:sticky;top:0;z-index:30;
     background:linear-gradient(180deg,var(--navy) 0%,var(--navy2) 100%);
     color:#F3ECDD;
+    padding:14px 16px 12px; /* fallback for engines without env() */
     padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left));
     border-bottom:3px solid var(--wheat);
     box-shadow:0 6px 18px rgba(10,22,33,.25);
@@ -145,6 +148,7 @@
   /* ---- Register view ---- */
   .rv-head{
     position:sticky;top:0;z-index:20;background:var(--paper2);border-bottom:1px solid var(--line);
+    padding:12px 14px; /* fallback for engines without env() */
     padding:calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 12px calc(14px + env(safe-area-inset-left));
     display:flex;align-items:center;gap:11px;backdrop-filter:blur(8px);
   }
@@ -369,6 +373,24 @@
 <script>
 "use strict";
 
+/* ============ Crash guard ============ */
+/* If anything throws, show a readable message instead of a blank screen. */
+window.addEventListener('error', function(e){
+  try{
+    if(document.getElementById('__err')) return;
+    var d=document.createElement('div'); d.id='__err';
+    d.style.cssText='position:fixed;inset:0;z-index:9999;background:#142C40;color:#F3ECDD;'
+      +'font:14px/1.7 sans-serif;padding:24px;direction:rtl;text-align:right;overflow:auto;';
+    d.innerHTML='<div style="font-size:17px;font-weight:700;margin-bottom:10px;color:#F2DEAE">'
+      +'حدث خطأ أثناء تشغيل التطبيق</div>'
+      +'<div style="opacity:.9">'+String((e&&e.message)||e)+'</div>'
+      +'<div style="opacity:.6;margin-top:8px;font-size:12px">'
+      +String((e&&e.filename)||'')+' : '+String((e&&e.lineno)||'')+'</div>'
+      +'<div style="opacity:.7;margin-top:16px;font-size:12px">أعد فتح التطبيق. إن تكررت المشكلة صوّر هذه الشاشة وأرسلها.</div>';
+    document.body.appendChild(d);
+  }catch(_){}
+});
+
 /* ============ Icons ============ */
 const I = {
   dash:'<path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/>',
@@ -565,7 +587,7 @@ const REGS = [
     ], titleField:'truck', titlePrefix:'شاحنة', statusField:'approval', statusTone:{'معتمد':'ok','معلق':'warn','مرفوض':'danger'},
     list:['amount','destination','exportOrder','dispatchOrder','receipt','missing'] }
 ];
-const REGMAP = Object.fromEntries(REGS.map(r=>[r.key,r]));
+const REGMAP = {}; REGS.forEach(function(r){ REGMAP[r.key]=r; });
 
 /* roles allowed to ENTER data per register (supervisors always allowed) */
 const SUPER=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق'];
