@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.42" r="0.75">
+      <stop offset="0" stop-color="#1E3F5A"/>
+      <stop offset="1" stop-color="#102234"/>
+    </radialGradient>
+    <linearGradient id="grain" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2DEAE"/>
+      <stop offset="1" stop-color="#B8780F"/>
+    </linearGradient>
+  </defs>
+  <rect width="2732" height="2732" fill="url(#bg)"/>
+  <g transform="translate(1366 1300) scale(1.7)">
+    <g stroke="url(#grain)" stroke-width="34" stroke-linecap="round" fill="none">
+      <path d="M0 300 L0 -300"/>
+    </g>
+    <g fill="url(#grain)">
+      <ellipse cx="0" cy="-300" rx="40" ry="78"/>
+      <g transform="translate(0 -210)">
+        <ellipse cx="-78" cy="0" rx="42" ry="84" transform="rotate(28 -78 0)"/>
+        <ellipse cx="78" cy="0" rx="42" ry="84" transform="rotate(-28 78 0)"/>
+      </g>
+      <g transform="translate(0 -110)">
+        <ellipse cx="-92" cy="0" rx="44" ry="90" transform="rotate(26 -92 0)"/>
+        <ellipse cx="92" cy="0" rx="44" ry="90" transform="rotate(-26 92 0)"/>
+      </g>
+      <g transform="translate(0 -10)">
+        <ellipse cx="-100" cy="0" rx="46" ry="94" transform="rotate(24 -100 0)"/>
+        <ellipse cx="100" cy="0" rx="46" ry="94" transform="rotate(-24 100 0)"/>
+      </g>
+      <g transform="translate(0 95)">
+        <ellipse cx="-96" cy="0" rx="44" ry="90" transform="rotate(22 -96 0)"/>
+        <ellipse cx="96" cy="0" rx="44" ry="90" transform="rotate(-22 96 0)"/>
+      </g>
+    </g>
+  </g>
+  <text x="1366" y="2060" text-anchor="middle" font-family="sans-serif" font-size="120" font-weight="700" fill="#F2DEAE">*A1J: 'DBE-</text>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1E3F5A"/>
+      <stop offset="1" stop-color="#142C40"/>
+    </linearGradient>
+    <linearGradient id="grain" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2DEAE"/>
+      <stop offset="1" stop-color="#B8780F"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <g transform="translate(512 540)" stroke="url(#grain)" stroke-width="34" stroke-linecap="round" fill="none">
+    <!-- central stalk -->
+    <path d="M0 300 L0 -300"/>
+  </g>
+  <g fill="url(#grain)" transform="translate(512 540)">
+    <!-- ear of wheat: paired grains along the stalk -->
+    <g>
+      <!-- top tip -->
+      <ellipse cx="0" cy="-300" rx="40" ry="78"/>
+    </g>
+    <!-- left and right grain pairs going down -->
+    <g id="pairs">
+      <!-- each pair -->
+      <g transform="translate(0 -210)">
+        <ellipse cx="-78" cy="0" rx="42" ry="84" transform="rotate(28 -78 0)"/>
+        <ellipse cx="78" cy="0" rx="42" ry="84" transform="rotate(-28 78 0)"/>
+      </g>
+      <g transform="translate(0 -110)">
+        <ellipse cx="-92" cy="0" rx="44" ry="90" transform="rotate(26 -92 0)"/>
+        <ellipse cx="92" cy="0" rx="44" ry="90" transform="rotate(-26 92 0)"/>
+      </g>
+      <g transform="translate(0 -10)">
+        <ellipse cx="-100" cy="0" rx="46" ry="94" transform="rotate(24 -100 0)"/>
+        <ellipse cx="100" cy="0" rx="46" ry="94" transform="rotate(-24 100 0)"/>
+      </g>
+      <g transform="translate(0 95)">
+        <ellipse cx="-96" cy="0" rx="44" ry="90" transform="rotate(22 -96 0)"/>
+        <ellipse cx="96" cy="0" rx="44" ry="90" transform="rotate(-22 96 0)"/>
+      </g>
+    </g>
+  </g>
+  <!-- ground / hull line suggesting ship deck -->
+  <path d="M250 800 Q512 880 774 800" stroke="#B8780F" stroke-width="30" fill="none" stroke-linecap="round" opacity="0.9"/>
+</svg>
