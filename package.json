@@ -1,6 +1,6 @@
 {
   "name": "wheat-ops",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "نظام تفريغ باخرة القمح السائب — Android app (Capacitor) for wheat ship unloading operations management.",
   "private": true,
   "scripts": {
