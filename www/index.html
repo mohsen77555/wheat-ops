@@ -302,7 +302,7 @@
       <div class="row">
         <div class="brand">
           <div class="t">تفريغ باخرة قمح سائب</div>
-          <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b></div>
+          <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b> · <span id="tb-ver" style="opacity:.85"></span></div>
         </div>
         <button class="iconbtn" id="openSettings" title="الإعدادات">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -426,26 +426,53 @@ const svg = (n,w=20)=>`<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill=
 const Store = {
   mem:{},
   PREFIX:'wheatops:',
-  hasExt(){ try{ return !!window.storage; }catch(e){ return false; } },
+  lastBackend:'memory',
+  _prefs(){ try{ var P=window.Capacitor&&window.Capacitor.Plugins; return (P&&P.Preferences)?P.Preferences:null; }catch(e){ return null; } },
   hasLS(){ try{ return typeof localStorage!=='undefined' && localStorage!==null; }catch(e){ return false; } },
+  hasExt(){ try{ return !!window.storage; }catch(e){ return false; } },
   async get(key){
+    /* 1) localStorage — synchronous and persistent in the WebView */
     if(this.hasLS()){
       try{
         var v = localStorage.getItem(this.PREFIX+key);
         if(v===null) v = localStorage.getItem(key);   /* migrate older un-prefixed keys */
-        if(v!==null) return JSON.parse(v);
+        if(v!==null){ this.lastBackend='localStorage'; return JSON.parse(v); }
       }catch(e){}
     }
+    /* 2) native Preferences — survives even if WebView storage is cleared;
+          repopulate localStorage from it when found (recovery). */
+    var P=this._prefs();
+    if(P){
+      try{
+        var r = await P.get({key:this.PREFIX+key});
+        if(r && r.value!=null){
+          if(this.hasLS()){ try{ localStorage.setItem(this.PREFIX+key, r.value); }catch(e){} }
+          this.lastBackend='preferences'; return JSON.parse(r.value);
+        }
+      }catch(e){}
+    }
+    /* 3) legacy window.storage (original design platform only) */
     if(this.hasExt()){
-      try{ const r = await window.storage.get(key,false); if(r) return JSON.parse(r.value); }catch(e){}
+      try{ const r2 = await window.storage.get(key,false); if(r2){ this.lastBackend='window.storage'; return JSON.parse(r2.value); } }catch(e){}
     }
     return (key in this.mem)? this.mem[key] : null;
   },
   async set(key,val){
     this.mem[key]=val;
     const json = JSON.stringify(val);
-    if(this.hasLS()){ try{ localStorage.setItem(this.PREFIX+key, json); }catch(e){} }
-    if(this.hasExt()){ try{ await window.storage.set(key, json, false); }catch(e){} }
+    var ok=false;
+    if(this.hasLS()){ try{ localStorage.setItem(this.PREFIX+key, json); ok=true; this.lastBackend='localStorage'; }catch(e){} }
+    var P=this._prefs();
+    if(P){ try{ await P.set({key:this.PREFIX+key, value:json}); ok=true; this.lastBackend='preferences'; }catch(e){} }
+    if(this.hasExt()){ try{ await window.storage.set(key, json, false); ok=true; }catch(e){} }
+    if(!ok) this.lastBackend='memory';
+  },
+  /* On-device self-test: write then read back a probe value. */
+  async selfTest(){
+    var probe='ok-'+Date.now();
+    await this.set('__selftest', probe);
+    var back = await this.get('__selftest');
+    return { ok: back===probe, backend:this.lastBackend };
   }
 };
 
@@ -612,7 +639,7 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.2.2';
+const APP_VERSION='1.2.3';
 
 /* ============ State ============ */
 const DB = { meta:{}, reg:{}, handovers:[] };
@@ -677,6 +704,7 @@ function toast(msg){
 function renderMeta(){
   $('#tb-ship').textContent = DB.meta.ship||'—';
   $('#tb-port').textContent = DB.meta.port||'—';
+  var ver=$('#tb-ver'); if(ver) ver.textContent='إصدار '+APP_VERSION;
   const chips=[
     ['cal', 'التاريخ', DB.meta.startDate||'غير محدد'],
     ['clock','الوردية', DB.meta.shift||'—'],
@@ -960,7 +988,9 @@ function openSettings(){
         <div class="hint">إن لم يفتح على أجهزة الفريق، الصق رابط المشاركة من Claude أو رابط الاستضافة هنا.</div></div>
       <button class="btn btn-ghost" id="s_qr" style="width:100%;justify-content:center">توليد رمز QR لفتح التطبيق</button>
     </div></div>
-    <div class="setgrp"><div class="gh">البيانات</div><div style="padding:12px 14px 14px">
+    <div class="setgrp"><div class="gh">البيانات والتخزين</div><div style="padding:12px 14px 14px">
+      <div id="s_storage" class="hint" style="margin-bottom:9px">حالة التخزين: —</div>
+      <button class="btn btn-ghost" id="s_selftest" style="width:100%;margin-bottom:9px;justify-content:center">فحص حفظ البيانات الآن</button>
       <button class="btn btn-ghost" id="s_export" style="width:100%;margin-bottom:9px;justify-content:center">تصدير كل السجلات (CSV)</button>
       <button class="btn" id="s_reset" style="width:100%;background:var(--danger-bg);color:var(--danger);justify-content:center">تصفير كل البيانات</button>
     </div></div>
@@ -975,6 +1005,13 @@ function openSettings(){
     DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value; DB.meta.operator=$('#s_op').value.trim();
     DB.meta.role=$('#s_role').value; DB.meta.hoppers=$('#s_hop').value.trim(); DB.meta.approvedBy=$('#s_appr').value.trim();
     saveMeta(); closeSheet(); renderHome(); toast('تم حفظ الإعدادات');
+  };
+  const backendName=b=>({localStorage:'محفوظ على الجهاز (localStorage)',preferences:'محفوظ على الجهاز (تخزين أندرويد)','window.storage':'تخزين خارجي',memory:'مؤقت فقط — لن يُحفظ!'}[b]||b);
+  (async()=>{ const el=$('#s_storage'); if(!el) return; const r=await Store.selfTest(); el.innerHTML='حالة التخزين: <b style="color:'+(r.ok?'var(--ok)':'var(--danger)')+'">'+(r.ok?'يعمل ✓':'لا يعمل ✗')+'</b> — '+esc(backendName(r.backend)); })();
+  $('#s_selftest').onclick=async()=>{
+    const r=await Store.selfTest();
+    const el=$('#s_storage'); if(el) el.innerHTML='حالة التخزين: <b style="color:'+(r.ok?'var(--ok)':'var(--danger)')+'">'+(r.ok?'يعمل ✓':'لا يعمل ✗')+'</b> — '+esc(backendName(r.backend));
+    toast(r.ok?('الحفظ يعمل · '+backendName(r.backend)):'تعذّر الحفظ على هذا الجهاز');
   };
   $('#s_export').onclick=exportAll;
   $('#s_qr').onclick=()=>{ const u=$('#s_url').value.trim(); if(!u){ toast('أدخل الرابط أولاً'); return; } showQR('رمز فتح التطبيق', u, 'app_link'); };
