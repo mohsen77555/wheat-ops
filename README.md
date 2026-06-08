@@ -27,7 +27,7 @@ scripts/gen-icons.mjs Rasterizes resources/*.svg into PNG icons
 ## Install directly on your phone (ready-made APK)
 
 A ready-to-install debug APK is published in this repo:
-[`dist/wheat-ops-1.2.1.apk`](dist/wheat-ops-1.2.1.apk).
+[`dist/wheat-ops-1.2.2.apk`](dist/wheat-ops-1.2.2.apk).
 
 On the phone:
 
