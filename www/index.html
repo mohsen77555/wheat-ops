@@ -346,6 +346,7 @@
   .lg-extra{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line2);}
 
   /* ---- Operator-only home (single screen) ---- */
+  body.operator-mode #secDash, body.operator-mode #superDash,
   body.operator-mode #secKpis, body.operator-mode #kpis,
   body.operator-mode #secWorkflow, body.operator-mode #workflow,
   body.operator-mode #alertsHead, body.operator-mode #alerts,
@@ -373,6 +374,26 @@
   .chain-dot.ok{background:var(--ok);border-color:var(--ok);}
   .chain-dot.warn{background:var(--warn);border-color:var(--warn);}
   .chain-dot.miss{background:var(--danger-bg);border-color:var(--danger);}
+  /* dark mode */
+  body.dark{
+    --paper:#121820; --paper2:#1a2430; --card:#1e2a38; --ink:#eef2f6; --ink2:#b8c4d0; --ink3:#8a98a8;
+    --line:#2d3d4f; --line2:#3a4d62; --wheat-bg:#3d2e14; --wheat-soft:#e8c878; --ok-bg:#1a3328; --warn-bg:#3d2e14; --danger-bg:#3d1f1a;
+    color-scheme:dark;
+  }
+  body.dark .topbar{background:linear-gradient(180deg,#0a1520 0%,#142030 100%);}
+  body.glove-mode .btn,.glove-mode .tile,.glove-mode .iconbtn{min-height:52px;font-size:15px;}
+  body.glove-mode .tile .ic{width:48px;height:48px;}
+  body.glove-mode input,body.glove-mode select,body.glove-mode textarea{font-size:18px;padding:12px;}
+  .dash-chart{display:flex;align-items:flex-end;gap:6px;height:72px;margin-top:8px;}
+  .dash-chart .bar{flex:1;background:var(--wheat-bg);border-radius:6px 6px 2px 2px;min-width:0;position:relative;border:1px solid var(--line);}
+  .dash-chart .bar i{display:block;width:100%;background:var(--wheat);border-radius:5px 5px 0 0;min-height:4px;}
+  .dash-chart .bar span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:9px;color:var(--ink3);}
+  .photo-prev{max-width:100%;max-height:120px;border-radius:10px;border:1px solid var(--line);margin-top:6px;}
+  .sig-pad{border:1px dashed var(--line2);border-radius:10px;background:var(--paper);touch-action:none;margin-top:6px;}
+  .sig-pad canvas{width:100%;height:100px;display:block;}
+  .pin-gate{position:fixed;inset:0;z-index:90;background:linear-gradient(180deg,var(--navy),#0e2030);display:flex;align-items:center;justify-content:center;padding:24px;}
+  .sync-badge{font-size:10px;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.1);color:#A9C2D4;margin-inline-start:4px;}
+  .sync-badge.warn{background:var(--warn-bg);color:var(--warn);}
   .chain-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy2);background:var(--paper);border:1px solid var(--line2);border-radius:9px;padding:7px 12px;margin-top:8px;}
   .chain-link:active{transform:scale(.97);}
   .chain-timeline{display:flex;flex-direction:column;gap:0;padding:4px 0;}
@@ -404,6 +425,12 @@
           <div class="t">تفريغ باخرة قمح سائب</div>
           <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b> · <span id="tb-ver" style="opacity:.85"></span></div>
         </div>
+        <button class="iconbtn" id="globalSearchBtn" title="بحث شاحنة">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+        </button>
+        <button class="iconbtn" id="newTruckBtn" title="شاحنة جديدة (فحص→تصدير)" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
         <button class="iconbtn" id="openSettings" title="الإعدادات">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
@@ -419,6 +446,8 @@
         <div class="alerts" id="operatorAlerts" style="margin-top:10px"></div>
       </div>
 
+      <div class="sec-h" id="secDash"><h2>لوحة المشرف</h2><span class="hint">مخططات الوردية</span></div>
+      <div id="superDash"></div>
       <div class="sec-h" id="secKpis"><h2>المؤشرات اللحظية</h2><span class="hint">الوردية الحالية</span></div>
       <div class="kpis" id="kpis"></div>
 
@@ -523,6 +552,15 @@
   <div class="sh-foot" id="sheetFoot"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="pinGate" class="pin-gate hidden">
+  <div style="width:100%;max-width:320px;background:var(--paper2);border-radius:18px;border-top:3px solid var(--wheat);padding:22px;text-align:center">
+    <div style="font-family:'Reem Kufi';font-size:18px;font-weight:600;margin-bottom:8px">قفل التطبيق</div>
+    <div class="hint" style="margin-bottom:12px">أدخل رمز PIN للمتابعة</div>
+    <input id="pin_input" type="password" inputmode="numeric" maxlength="8" style="width:100%;text-align:center;font-size:22px;letter-spacing:6px;padding:12px;border:1px solid var(--line);border-radius:11px">
+    <div id="pin_err" style="color:var(--danger);font-size:12px;min-height:18px;margin:6px 0"></div>
+    <button class="btn btn-pri" id="pin_unlock" style="width:100%;justify-content:center">فتح</button>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -693,7 +731,23 @@ const Sync = {
   },
   onLocalSet(key, val){
     if(this.applying || !this.active()) return;
-    if(key==='meta' || isCollectionKey(key)) this.push(key, val);
+    const allow=syncKeysForRole();
+    if(allow && key.indexOf('reg:')===0 && allow.indexOf(key)<0) return;
+    if(key==='meta' || isCollectionKey(key)) this.push(key, val).catch(()=>{ this.enqueue(key,val); });
+  },
+  enqueue(key,val){
+    DB.syncQueue.push({key, t:Date.now(), dev:this.dev});
+    if(DB.syncQueue.length>50) DB.syncQueue=DB.syncQueue.slice(-40);
+    saveSyncQueue();
+  },
+  async flushQueue(){
+    if(!this.active() || !DB.syncQueue.length) return;
+    const pending=DB.syncQueue.slice();
+    for(const item of pending){
+      const k=item.key, val=k==='users'?DB.users:(k==='handovers'?DB.handovers:(k.indexOf('reg:')===0?DB.reg[k.slice(4)]:null));
+      if(val!=null){ try{ await this.push(k,val); DB.syncQueue=DB.syncQueue.filter(x=>x!==item); }catch(e){} }
+    }
+    await saveSyncQueue(); refreshUI();
   },
   async applyEnvelope(key, env){
     if(!env || env.dev===this.dev || env.v==null) return;     // skip own echoes / empty
@@ -751,9 +805,14 @@ const Sync = {
   stop(){ if(this.es){ try{ this.es.close(); }catch(e){} this.es=null; } if(this.status!=='off') this.status='off'; },
   pushAll(){
     if(!this.active()) return;
+    const allow=syncKeysForRole();
     this.push('users', DB.users);
     this.push('handovers', DB.handovers);
-    REGS.forEach(r=> this.push('reg:'+r.key, DB.reg[r.key]) );
+    REGS.forEach(r=>{
+      const k='reg:'+r.key;
+      if(!allow || allow.indexOf(k)>=0) this.push(k, DB.reg[r.key]);
+    });
+    this.flushQueue();
   },
   async pullKey(key){
     if(!this.active()) return false;
@@ -800,9 +859,12 @@ const REGS = [
       {n:'hopper',l:'رقم الهوبر',t:'text',mono:true},
       {n:'hold',l:'رقم الخن',t:'text',mono:true},
       {n:'destination',l:'الوجهة',t:'text'},
+      {n:'weightEmpty',l:'وزن فارغ عند التحميل (كغ)',t:'number',mono:true},
+      {n:'weightLoaded',l:'وزن محمّل عند التحميل (كغ)',t:'number',mono:true},
+      {n:'weightPhoto',l:'صورة الميزان',t:'photo'},
       {n:'officer',l:'مسؤول التصدير',t:'text'},
       {n:'notes',l:'ملاحظات',t:'textarea'}
-    ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['serial','loadTime','hopper','hold','destination','driver','officer'] },
+    ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['serial','loadTime','hopper','hold','_netWeight','destination','driver','officer'] },
 
   { key:'dispatch', title:'الترحيل', short:'الخطوة ٣ — أوامر الترحيل ومتابعة الخروج', icon:'dispatch',
     color:{bg:'#E5F0EE',fg:'#155E5A'}, addLabel:'أمر ترحيل', workflowStage:3,
@@ -849,7 +911,8 @@ const REGS = [
       {n:'obsType',l:'نوع الملاحظة',t:'select',req:true,o:['رطوبة','تكتل','رائحة غير طبيعية','حشرات','تغير لون','شوائب مؤثرة','شاحنة غير نظيفة','تسريب','أخرى']},
       {n:'obsDesc',l:'وصف الملاحظة',t:'textarea'},
       {n:'action',l:'الإجراء المتخذ',t:'textarea'},
-      {n:'photos',l:'صور مرفقة',t:'select',o:SEL_YN},
+      {n:'inspectionPhoto',l:'صورة الفحص',t:'photo'},
+      {n:'photos',l:'صور إضافية',t:'select',o:SEL_YN},
       {n:'officer',l:'مسؤول الفحص',t:'text'},
       {n:'notes',l:'ملاحظات',t:'text'}
     ], titleField:'obsType', statusField:'photos', statusTone:{'نعم':'ok','لا':'neutral'}, statusPrefix:'صور: ',
@@ -950,6 +1013,8 @@ const REGS = [
       {n:'amount',l:'المبلغ (ريال)',t:'number',req:true,mono:true},
       {n:'paymentMethod',l:'طريقة الصرف',t:'select',o:['نقدي','تحويل بنكي','شيك','بطاقة','أخرى']},
       {n:'receiptNo',l:'رقم السند / الإيصال',t:'text',mono:true},
+      {n:'receiptPhoto',l:'صورة الإيصال',t:'photo'},
+      {n:'shiftTag',l:'الوردية',t:'text'},
       {n:'approval',l:'حالة الاعتماد',t:'select',req:true,o:['معتمد','معلق','مرفوض']},
       {n:'notes',l:'ملاحظات',t:'text'}
     ], titleField:'description', statusField:'approval', statusTone:{'معتمد':'ok','معلق':'warn','مرفوض':'danger'},
@@ -962,7 +1027,13 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.7.4';
+const APP_VERSION='1.8.0';
+const DEFAULT_PREFS={
+  weightToleranceKg:50, dailySpendCap:0, shiftSpendCap:0, darkMode:false, gloveMode:false,
+  appPinHash:'', mandatoryBarcodeExport:true, deputyReadOnly:true, retentionDays:90,
+  partialSync:true, checklistItems:null, alertSound:true, alertVibrate:true,
+  mandatoryOperatorSync:true, autoReconcile:true, autoBackupDaily:true, scaleManualHint:true
+};
 const WORKFLOW_KEYS=['checklist','export','dispatch','reception'];
 const CHAIN_STAGES=[
   {key:'checklist',label:'مرحلة الفحص',icon:'checklist',required:true},
@@ -979,8 +1050,8 @@ const ROLE_PRIMARY={
 const SCAN_FIELDS=['truck','employeeId','receiptNo','orderNo','serial'];
 
 /* ============ State ============ */
-const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null, deviceSetup:null };
-const DEFAULT_META = { ship:'INCE INEBOLU', port:'الصليف', startDate:'', shift:'الوردية الأولى', operator:'', role:'', hoppers:'', approvedBy:'' };
+const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null, deviceSetup:null, auditLog:[], loginFails:[], syncQueue:[], archive:null, pinUnlocked:false };
+const DEFAULT_META = { ship:'INCE INEBOLU', port:'الصليف', startDate:'', shift:'الوردية الأولى', operator:'', role:'', hoppers:'', approvedBy:'', prefs:null, lastBackupDate:'' };
 
 async function loadAll(){
   const m = await Store.get('meta');
@@ -992,7 +1063,41 @@ async function loadAll(){
   DB.users = (await Store.get('users')) || [];
   DB.sessionUser = await Store.get('session');
   DB.deviceSetup = await Store.get('deviceSetup');
+  DB.auditLog = (await Store.get('auditLog')) || [];
+  DB.loginFails = (await Store.get('loginFails')) || [];
+  DB.syncQueue = (await Store.get('syncQueue')) || [];
+  DB.archive = await Store.get('archive');
+  if(!DB.meta.prefs) DB.meta.prefs=Object.assign({}, DEFAULT_PREFS);
+  else DB.meta.prefs=Object.assign({}, DEFAULT_PREFS, DB.meta.prefs);
+  applyPrefs();
   await ensureSeedAdmin();
+}
+async function saveAuditLog(){ await Store.set('auditLog', DB.auditLog); }
+async function saveLoginFails(){ await Store.set('loginFails', DB.loginFails); }
+async function saveSyncQueue(){ await Store.set('syncQueue', DB.syncQueue); }
+function prefs(){ return DB.meta.prefs || DEFAULT_PREFS; }
+function weightTolerance(){ return Number(prefs().weightToleranceKg)||0; }
+function applyPrefs(){
+  const p=prefs();
+  document.body.classList.toggle('dark', !!p.darkMode);
+  document.body.classList.toggle('glove-mode', !!p.gloveMode);
+  const meta=document.querySelector('meta[name="color-scheme"]');
+  if(meta) meta.content=p.darkMode?'dark':'light';
+}
+function checklistItems(){
+  const c=prefs().checklistItems;
+  if(Array.isArray(c) && c.length) return c;
+  return (REGMAP.checklist && REGMAP.checklist.items) || [];
+}
+async function audit(action, detail){
+  DB.auditLog.push({action, detail:detail||'', user:DB.meta.operator||'', role:DB.meta.role||'', t:nowTime(), d:todayDate(), id:Date.now()});
+  if(DB.auditLog.length>600) DB.auditLog=DB.auditLog.slice(-500);
+  await saveAuditLog();
+}
+async function logFailedLogin(username){
+  DB.loginFails.push({username, t:nowTime(), d:todayDate(), id:Date.now()});
+  if(DB.loginFails.length>200) DB.loginFails=DB.loginFails.slice(-150);
+  await saveLoginFails();
 }
 async function saveDeviceSetup(){ await Store.set('deviceSetup', DB.deviceSetup); }
 async function saveMeta(){ await Store.set('meta', DB.meta); }
@@ -1072,9 +1177,22 @@ function applySession(){
 /* ============ Governance enforcement ============ */
 function canAccess(r){
   const role=currentRole();
-  if(!role) return true;                 // role not set → full access (configure per device)
-  if(SUPER.includes(role)) return true;  // supervisors: full access
+  if(!role) return true;
+  if(SUPER.includes(role)) return true;
   return (r.roles||[]).includes(role);
+}
+function isDeputyReadOnly(){
+  return !!(prefs().deputyReadOnly && currentRole()==='نائب رئيس الفريق');
+}
+function canWrite(r){
+  if(isDeputyReadOnly()) return false;
+  return canAccess(r);
+}
+function syncKeysForRole(){
+  if(!prefs().partialSync || isSupervisorRole(currentRole())) return null;
+  const keys=operatorAllowedKeys();
+  if(!keys) return null;
+  return keys.map(k=>'reg:'+k);
 }
 function approvedHoppers(){
   return (DB.meta.hoppers||'').split(/[,،\s]+/).map(s=>s.trim()).filter(Boolean);
@@ -1230,6 +1348,33 @@ function renderMeta(){
   $('#metabar').querySelectorAll('[data-set]').forEach(b=>b.onclick=openSettings);
 }
 
+function renderSuperDash(){
+  const el=$('#superDash'), head=$('#secDash');
+  if(!el) return;
+  if(isOperatorView()){ el.innerHTML=''; if(head) head.style.display='none'; return; }
+  if(head) head.style.display='';
+  const stages=[
+    {k:'checklist',l:'فحص'},{k:'export',l:'تصدير'},{k:'dispatch',l:'ترحيل'},{k:'reception',l:'استقبال'}
+  ];
+  const max=Math.max(1,...stages.map(s=>(DB.reg[s.k]||[]).length));
+  const bars=stages.map(s=>{
+    const n=(DB.reg[s.k]||[]).length, pct=Math.round(n/max*100);
+    return `<div class="bar"><i style="height:${pct}%"></i><span>${esc(s.l)}</span></div>`;
+  }).join('');
+  const fin=(DB.reg.finance||[]).filter(x=>x.approval==='معتمد'&&x._d===todayDate()).reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const q=DB.syncQueue.length;
+  el.innerHTML=`<div class="gov-meter"><div class="top"><div style="font-size:13px;font-weight:600">تدفق الوردية</div>
+    <div class="pct">${DB.reg.export.length} شاحنة</div></div>
+    <div class="dash-chart">${bars}</div>
+    <div class="hint" style="margin-top:22px">صرف اليوم: <b>${fin.toLocaleString('ar-SA')} ريال</b>
+      ${q?` · <span class="sync-badge warn">مزامنة معلّقة: ${q}</span>`:''}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="dash_report" style="flex:1;font-size:12px;justify-content:center">تقرير الوردية PDF</button>
+      <button class="btn btn-ghost" id="dash_fin" style="flex:1;font-size:12px;justify-content:center">تقرير مالي شهري</button>
+    </div></div>`;
+  const dr=$('#dash_report'); if(dr) dr.onclick=()=>{ openHandover(); };
+  const df=$('#dash_fin'); if(df) df.onclick=openFinanceMonthlyReport;
+}
 function renderKpis(){
   if(isOperatorView()){ $('#kpis').innerHTML=''; return; }
   const c = k=> DB.reg[k].length;
@@ -1371,9 +1516,21 @@ function renderGovMeter(){
   $('#gm_chains').onclick=openChainRegistry;
   $('#gm_gov').onclick=openGovernance;
 }
+function maybeAlertChainGaps(){
+  const p=prefs(); if(!p.alertSound && !p.alertVibrate) return;
+  const g=governanceStats();
+  if(!g.broken || isOperatorView()) return;
+  if(p.alertVibrate && navigator.vibrate) try{ navigator.vibrate([80,40,80]); }catch(e){}
+  if(p.alertSound){ try{ const a=new AudioContext(); const o=a.createOscillator(); const g2=a.createGain();
+    o.frequency.value=440; g2.gain.value=0.08; o.connect(g2); g2.connect(a.destination); o.start(); o.stop(a.currentTime+0.15);
+  }catch(e){} }
+}
 function renderHome(){
   applyOperatorLayout();
-  renderMeta(); renderKpis(); renderWorkflow(); renderAlerts(); renderGovMeter(); renderTiles();
+  const nt=$('#newTruckBtn');
+  if(nt) nt.style.display=(canAccess(REGMAP.checklist)||canAccess(REGMAP.export))?'':'none';
+  renderMeta(); renderSuperDash(); renderKpis(); renderWorkflow(); renderAlerts(); renderGovMeter(); renderTiles();
+  maybeAlertChainGaps();
 }
 
 /* Re-render visible UI after a remote sync update */
@@ -1429,7 +1586,10 @@ function openRegister(key){
   show('reg'); renderRegList();
 }
 $('#regSearch').oninput=e=>{ FILTER=e.target.value.trim(); renderRegList(); };
-$('#regAdd').onclick=()=> CUR.isChecklist? openChecklistForm() : openForm(CUR);
+$('#regAdd').onclick=()=>{
+  if(!canWrite(CUR)){ toast(isDeputyReadOnly()?'قراءة فقط':'لا صلاحية إدخال'); return; }
+  CUR.isChecklist? openChecklistForm() : openForm(CUR);
+};
 $('#regScan').onclick=()=>{
   if(CUR && CUR.isChecklist){ openChecklistForm(); setTimeout(()=>{ const t=$('#f_truck'); if(t) BarcodeScanner.open(v=>{ t.value=v; }); }, 300); }
   else if($('#f_truck')){ BarcodeScanner.open(v=>{ const t=$('#f_truck'); t.value=v; t.dispatchEvent(new Event('change')); }); }
@@ -1519,10 +1679,30 @@ function openSheet(title){ $('#sheetTitle').textContent=title; scrim.classList.a
 function closeSheet(){ scrim.classList.remove('on'); sheet.classList.remove('on'); }
 scrim.onclick=closeSheet; $('#sheetClose').onclick=closeSheet;
 
+const PhotoCapture={
+  async pick(){
+    try{
+      const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Camera;
+      if(P){ const r=await P.getPhoto({quality:65,resultType:'dataUrl',source:'CAMERA',saveToGallery:false});
+        return r.dataUrl||null; }
+    }catch(e){}
+    return new Promise(res=>{
+      const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+      inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f) return res(null);
+        const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.readAsDataURL(f); };
+      inp.click();
+    });
+  }
+};
+function bindPhotoField(id){
+  const hid=$(id), prev=$(id+'_prev'), btn=$(id+'_btn');
+  if(btn) btn.onclick=async()=>{ const u=await PhotoCapture.pick(); if(!u) return; if(hid) hid.value=u; if(prev) prev.innerHTML=`<img class="photo-prev" src="${u}" alt="">`; toast('تم إرفاق الصورة'); };
+}
 function fieldHtml(f){
   const id='f_'+f.n, req=f.req?' <span class="req">*</span>':'';
   let input;
-  if(f.t==='textarea') input=`<textarea id="${id}" data-n="${f.n}"></textarea>`;
+  if(f.t==='photo') input=`<input type="hidden" id="${id}" data-n="${f.n}"><button type="button" class="btn btn-ghost" id="${id}_btn" style="width:100%;justify-content:center">${svg('quality',16)} التقاط / إرفاق صورة</button><div id="${id}_prev"></div>`;
+  else if(f.t==='textarea') input=`<textarea id="${id}" data-n="${f.n}"></textarea>`;
   else if(f.t==='select'){
     input=`<select id="${id}" data-n="${f.n}"><option value="">— اختر —</option>${f.o.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`;
   } else {
@@ -1544,7 +1724,7 @@ function bindScanButtons(root){
   });
 }
 function openForm(r){
-  if(!canAccess(r)){ toast('سجل «'+r.title+'» مخصص لـ: '+([...SUPER.slice(0,1),...(r.roles||[])].join('، ')||'الإشراف')+'. غيّر الدور من الإعدادات.'); return; }
+  if(!canWrite(r)){ toast(isDeputyReadOnly()?'دور النائب للقراءة فقط — لا يمكن الإدخال':('سجل «'+r.title+'» مخصص لـ: '+([...SUPER.slice(0,1),...(r.roles||[])].join('، ')||'الإشراف')+'. غيّر الدور من الإعدادات.')); return; }
   // group time/short fields into rows where natural; simple full-width is fine on mobile
   const html = (r.fields||[]).map(fieldHtml).join('');
   $('#sheetBody').innerHTML=html;
@@ -1555,7 +1735,31 @@ function openForm(r){
     if(f.t==='time' && ['time','loadTime','startTime','arrival','exitTime'].includes(f.n)) el.value=nowTime();
     if(f.t==='date') el.value=todayDate();
     if(f.n==='officer' && DB.meta.operator) el.value=DB.meta.operator;
+    if(f.n==='shiftTag' && DB.meta.shift) el.value=DB.meta.shift;
   });
+  (r.fields||[]).filter(f=>f.t==='photo').forEach(f=>bindPhotoField('#f_'+f.n));
+  if(r.key==='export' && prefs().mandatoryBarcodeExport){
+    $('#sheetBody').insertAdjacentHTML('afterbegin','<div class="hint" style="margin-bottom:10px;padding:8px 10px;background:var(--warn-bg);border-radius:9px">يُفضَّل مسح باركود الشاحنة قبل التصدير (زر المسح).</div>');
+  }
+  if(r.key==='dispatch'||r.key==='reception'||r.key==='export'){
+    ['weightEmpty','weightLoaded'].forEach(n=>{
+      const el=$('#f_'+n); if(!el) return;
+      el.addEventListener('input',()=>{
+        const net=calcNet($('#f_weightEmpty')&&$('#f_weightEmpty').value, $('#f_weightLoaded')&&$('#f_weightLoaded').value);
+        let hint=$('#weightNetHint'); if(!hint){ hint=document.createElement('div'); hint.id='weightNetHint'; hint.className='hint'; hint.style.marginTop='6px'; el.closest('.field').appendChild(hint); }
+        hint.textContent=net!=null?('الصافي: '+net.toLocaleString('ar-SA')+' كغ'):'';
+      });
+    });
+    const scaleBtn=document.createElement('button'); scaleBtn.type='button'; scaleBtn.className='btn btn-ghost'; scaleBtn.style.cssText='width:100%;margin-top:6px;font-size:12px;justify-content:center';
+    scaleBtn.innerHTML=svg('reconcile',14)+' قراءة من الميزان (يدوي)';
+    scaleBtn.onclick=()=>{ toast('أدخل الوزن من شاشة الميزان — دعم Bluetooth قريباً'); const w=prompt('الوزن الحالي من الميزان (كغ):'); if(w==null) return;
+      const n=parseKg(w); if(n==null){ toast('رقم غير صالح'); return; }
+      const empty=$('#f_weightEmpty'), loaded=$('#f_weightLoaded');
+      if(loaded && !loaded.value) loaded.value=n; else if(empty && !empty.value) empty.value=n; else if(loaded) loaded.value=n;
+      loaded&&loaded.dispatchEvent(new Event('input'));
+    };
+    const wf=$('#f_weightLoaded'); if(wf && wf.closest('.field')) wf.closest('.field').appendChild(scaleBtn);
+  }
   if(r.autoSerial){ const el=$('#f_serial'); if(el){ const mx=DB.reg[r.key].reduce((a,x)=>Math.max(a, Number(x.serial)||0),0); el.value=mx+1; } }
   if(r.key==='reconcile'){
     $('#sheetBody').insertAdjacentHTML('beforeend','<div id="reconCalc" class="hint" style="margin-top:10px;padding:10px;border:1px dashed var(--line2);border-radius:10px;line-height:1.8"></div>');
@@ -1569,9 +1773,46 @@ function openForm(r){
   }
   smartFormAssist(r);
   bindScanButtons($('#sheetBody'));
+  $('#sheetBody').querySelectorAll('[data-scan]').forEach(btn=>{
+    const orig=btn.onclick;
+    btn.onclick=()=>{
+      BarcodeScanner.open(v=>{
+        const el=document.getElementById(btn.dataset.scan);
+        if(el){ el.value=v; el.dataset.barcodeScanned='1'; el.dispatchEvent(new Event('change')); el.dispatchEvent(new Event('blur')); }
+        if(r.key==='export') window._exportBarcodeOk=true;
+      });
+    };
+  });
   $('#frmCancel').onclick=closeSheet;
   $('#frmSave').onclick=()=>saveForm(r);
   openSheet(r.addLabel||'إضافة سجل');
+}
+function autoCreateReconcileFromReception(rec){
+  if(!prefs().autoReconcile) return;
+  const t=normTruck(rec.truck); if(!t) return;
+  if(latestByTruck('reconcile',t)) return;
+  const dis=latestByTruck('dispatch',t);
+  const dNet=dis?truckNetWeight(dis):null, rNet=truckNetWeight(rec);
+  const diff=(dNet!=null&&rNet!=null)?Math.abs(dNet-rNet):null;
+  const tol=weightTolerance();
+  const row={ truck:t, serial:dis?dis.serial:'', hopper:dis?dis.hopper:'', hold:dis?dis.hold:'',
+    dispatchEmpty:dis?dis.weightEmpty:'', dispatchLoaded:dis?dis.weightLoaded||dis.weight:'',
+    receptionEmpty:rec.weightEmpty, receptionLoaded:rec.weightLoaded,
+    exporterData:dNet!=null?('صافي ترحيل: '+dNet+' كغ'):'', agentData:rNet!=null?('صافي استقبال: '+rNet+' كغ'):'',
+    result:(diff==null||diff<=tol)?'مطابق':'اختلاف',
+    action:diff&&diff>tol?'مطابقة تلقائية — فرق '+diff+' كغ':'مطابقة تلقائية عند الاستقبال',
+    notes:'أُنشئت تلقائياً', _auto:true, _t:nowTime(), _d:todayDate(), _by:DB.meta.operator||'', _id:Date.now()+Math.floor(Math.random()*99) };
+  if(dNet!=null) row._dispatchNet=dNet; if(rNet!=null) row._receptionNet=rNet; if(diff!=null) row.weightDiff=diff;
+  linkChainOnSave(row); DB.reg.reconcile.push(row); saveReg('reconcile'); audit('مطابقة تلقائية','شاحنة '+t);
+}
+function shiftFinanceTotal(){
+  const sh=DB.meta.shift||'', d=todayDate();
+  return (DB.reg.finance||[]).filter(x=>x.approval==='معتمد' && (x._d===d||x.date===d) && (!x.shiftTag||x.shiftTag===sh))
+    .reduce((a,x)=>a+(Number(x.amount)||0),0);
+}
+function dayFinanceTotal(){
+  const d=todayDate();
+  return (DB.reg.finance||[]).filter(x=>x.approval==='معتمد' && (x._d===d||x.date===d)).reduce((a,x)=>a+(Number(x.amount)||0),0);
 }
 
 /* ============ Smart form assist (autocomplete + auto-fill from history) ============ */
@@ -1675,6 +1916,16 @@ function saveForm(r){
 
   if(r.key==='export'){
     const t=(rec.truck||'').trim();
+    if(prefs().mandatoryBarcodeExport){
+      const tEl=$('#f_truck');
+      if(!window._exportBarcodeOk && !(tEl&&tEl.dataset.barcodeScanned)){
+        if(!govGate('قاعدة الباركود: يُفضَّل مسح باركود الشاحنة قبل التصدير.\nالمتابعة بدون مسح؟')){ toast('امسح باركود الشاحنة أولاً'); return; }
+        mark('بدون مسح باركود');
+      }
+    }
+    window._exportBarcodeOk=false;
+    const exNet=calcNet(rec.weightEmpty,rec.weightLoaded);
+    if(exNet!=null){ if(exNet<=0){ toast('الوزن المحمّل يجب أن يكون أكبر من الفارغ'); return; } rec._netWeight=exNet; }
     if(!rec.officer){ const el=$('#f_officer'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('سجّل اسم مسؤول التصدير (لا يُترك الهوبر بلا مسؤول)'); return; }
     const inspected = t && (DB.reg.checklist||[]).some(x=>(x.truck||'').trim()===t);
     if(!inspected){
@@ -1713,10 +1964,12 @@ function saveForm(r){
     if(!rec.qty) rec.qty=String(net);
     const disp=latestByTruck('dispatch',t);
     const dNet=disp?truckNetWeight(disp):null;
-    if(dNet!=null && Math.abs(net-dNet)>0){
-      if(!govGate('فرق الوزن الصافي بين الترحيل ('+dNet+' كغ) والاستقبال ('+net+' كغ) = '+Math.abs(net-dNet)+' كغ.\nهل تُوثَّق المتابعة؟')){ toast('صحّح الأوزان أو وثّق التجاوز'); return; }
-      mark('فرق وزن '+Math.abs(net-dNet)+' كغ'); logException('استقبال الشاحنة '+t+' بفرق وزن عن الترحيل','مطابقة الأوزان');
+    const tol=weightTolerance(), wdiff=dNet!=null?Math.abs(net-dNet):0;
+    if(dNet!=null && wdiff>tol){
+      if(!govGate('فرق الوزن الصافي بين الترحيل ('+dNet+' كغ) والاستقبال ('+net+' كغ) = '+wdiff+' كغ (الحد المسموح '+tol+' كغ).\nهل تُوثَّق المتابعة؟')){ toast('صحّح الأوزان أو وثّق التجاوز'); return; }
+      mark('فرق وزن '+wdiff+' كغ'); logException('استقبال الشاحنة '+t+' بفرق وزن عن الترحيل','مطابقة الأوزان');
     }
+    autoCreateReconcileFromReception(rec);
   }
   if(r.key==='reconcile'){
     const dNet=calcNet(rec.dispatchEmpty,rec.dispatchLoaded);
@@ -1724,9 +1977,11 @@ function saveForm(r){
     if(dNet==null || rNet==null){ toast('أكمل أوزان الترحيل والاستقبال للمطابقة'); return; }
     rec._dispatchNet=dNet; rec._receptionNet=rNet;
     rec.weightDiff=Math.abs(dNet-rNet);
-    if(rec.result==='مطابق' && rec.weightDiff>0){
-      if(!govGate('النتيجة «مطابق» لكن فرق الصافي '+rec.weightDiff+' كغ.\nتأكيد المطابقة؟')){ toast('غيّر النتيجة إلى اختلاف أو صحّح الأوزان'); return; }
+    const tol=weightTolerance();
+    if(rec.result==='مطابق' && rec.weightDiff>tol){
+      if(!govGate('النتيجة «مطابق» لكن فرق الصافي '+rec.weightDiff+' كغ (الحد '+tol+' كغ).\nتأكيد المطابقة؟')){ toast('غيّر النتيجة إلى اختلاف أو صحّح الأوزان'); return; }
     }
+    if(rec.weightDiff<=tol && rec.result==='اختلاف' && !rec._override) rec.result='مطابق';
     if(!rec.exporterData) rec.exporterData='صافي ترحيل: '+dNet+' كغ';
     if(!rec.agentData) rec.agentData='صافي استقبال: '+rNet+' كغ';
     if(!rec.action && rec.weightDiff>0) rec.action='معالجة فرق وزن '+rec.weightDiff+' كغ';
@@ -1737,6 +1992,18 @@ function saveForm(r){
       const el=$('#f_employeeName'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('أدخل اسم الموظف لصرف الرواتب والبدلات'); return;
     }
     if(!rec.amount || Number(rec.amount)<=0){ const el=$('#f_amount'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('أدخل مبلغ الصرف'); return; }
+    if(!rec.shiftTag) rec.shiftTag=DB.meta.shift||'';
+    const amt=Number(rec.amount)||0, capD=Number(prefs().dailySpendCap)||0, capS=Number(prefs().shiftSpendCap)||0;
+    if(rec.approval==='معتمد'){
+      if(capD>0 && dayFinanceTotal()+amt>capD){
+        if(!govGate('تجاوز سقف الصرف اليومي ('+capD.toLocaleString('ar-SA')+' ريال).')){ toast('تجاوز سقف الصرف اليومي'); return; }
+        mark('تجاوز سقف يومي');
+      }
+      if(capS>0 && shiftFinanceTotal()+amt>capS){
+        if(!govGate('تجاوز سقف صرف الوردية ('+capS.toLocaleString('ar-SA')+' ريال).')){ toast('تجاوز سقف الوردية'); return; }
+        mark('تجاوز سقف وردية');
+      }
+    }
   }
   if(r.key==='violations'){
     if(!rec.action){ const el=$('#f_action'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('سجّل الإجراء الفوري المتخذ'); return; }
@@ -1748,34 +2015,57 @@ function saveForm(r){
 
   linkChainOnSave(rec);
   DB.reg[r.key].push(rec); saveReg(r.key);
+  audit('حفظ سجل', (REGMAP[r.key]&&REGMAP[r.key].title)+' · '+(rec.truck||rec._id||''));
   closeSheet(); renderRegList(); renderHome();
   toast(rec._override?'حُفظ مع تجاوز موثّق':'تم حفظ السجل');
 }
 
 /* Checklist form */
+function initSignaturePad(){
+  const c=$('#sig_canvas'); if(!c) return null;
+  const ctx=c.getContext('2d'); ctx.strokeStyle='#142C40'; ctx.lineWidth=2; let drawing=false;
+  const pos=e=>{ const r=c.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return {x:(t.clientX-r.left)*(c.width/r.width), y:(t.clientY-r.top)*(c.height/r.height)}; };
+  const down=e=>{ drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); };
+  const move=e=>{ if(!drawing) return; const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); };
+  const up=()=>{ drawing=false; };
+  c.addEventListener('mousedown',down); c.addEventListener('mousemove',move); c.addEventListener('mouseup',up); c.addEventListener('mouseleave',up);
+  c.addEventListener('touchstart',down,{passive:false}); c.addEventListener('touchmove',move,{passive:false}); c.addEventListener('touchend',up);
+  return { data:()=>c.toDataURL('image/png'), clear:()=>{ ctx.clearRect(0,0,c.width,c.height); } };
+}
 function openChecklistForm(){
   const r=CUR;
-  if(!canAccess(r)){ toast('فحص الجودة مخصص لمسؤول الفحص والجودة. غيّر الدور من الإعدادات.'); return; }
+  if(!canWrite(r)){ toast(isDeputyReadOnly()?'دور النائب للقراءة فقط':'فحص الجودة مخصص لمسؤول الفحص والجودة.'); return; }
   const head=`<div class="field"><label>اسم الفاحص</label><input id="f_inspector" value="${esc(DB.meta.operator||'')}"></div>
     <div class="frow"><div class="field"><label>رقم الشاحنة <span class="req">*</span></label>
       <div class="scanrow"><input id="f_truck" inputmode="numeric" placeholder="امسح الباركود أو أدخل الرقم">
       <button type="button" class="btn-scan" data-scan="f_truck" title="مسح باركود الشاحنة">${svg('scan',20)}</button></div></div>
     <div class="field"><label>التاريخ</label><input id="f_date" type="date" value="${todayDate()}"></div></div>
     <div style="font-size:12px;color:var(--ink2);margin:4px 2px 10px;font-weight:600;">مرحلة الفحص — بنود التحقق</div>`;
-  const items=r.items.map((it,i)=>`<label class="check"><input type="checkbox" data-ci="${i}" checked><span>${esc(it)}</span></label>`).join('');
-  const tail=`<div class="field" style="margin-top:12px"><label>ملاحظات</label><textarea id="f_notes"></textarea></div>`;
+  const clItems=checklistItems();
+  const items=clItems.map((it,i)=>`<label class="check"><input type="checkbox" data-ci="${i}" checked><span>${esc(it)}</span></label>`).join('');
+  const tail=`<div class="field"><label>توقيع الفاحص الرقمي</label><div class="sig-pad"><canvas id="sig_canvas" width="480" height="100"></canvas></div>
+    <button type="button" class="btn btn-ghost" id="sig_clear" style="width:100%;margin-top:6px;font-size:12px">مسح التوقيع</button></div>
+    <div class="field" style="margin-top:12px"><label>صورة الفحص</label><input type="hidden" id="f_insp_photo"><button type="button" class="btn btn-ghost" id="f_insp_photo_btn" style="width:100%;justify-content:center">${svg('quality',16)} التقاط صورة</button><div id="f_insp_photo_prev"></div></div>
+    <div class="field" style="margin-top:12px"><label>ملاحظات</label><textarea id="f_notes"></textarea></div>`;
   $('#sheetBody').innerHTML=head+items+tail;
   $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="frmCancel" style="flex:.6">إلغاء</button><button class="btn btn-pri" id="frmSave">حفظ الفحص</button>`;
   $('#frmCancel').onclick=closeSheet;
   bindScanButtons($('#sheetBody'));
+  const sig=initSignaturePad();
+  $('#sig_clear').onclick=()=>sig&&sig.clear();
+  bindPhotoField('#f_insp_photo');
+  $('#f_insp_photo_btn').onclick=async()=>{ const u=await PhotoCapture.pick(); if(u){ $('#f_insp_photo').value=u; $('#f_insp_photo_prev').innerHTML=`<img class="photo-prev" src="${u}">`; } };
   $('#frmSave').onclick=()=>{
     const truck=$('#f_truck').value.trim();
     if(!truck){ $('#f_truck').focus(); toast('امسح باركود الشاحنة أو أدخل رقمها'); return; }
-    const items=r.items.map((it,i)=>({label:it, ok:$(`[data-ci="${i}"]`).checked}));
+    const items=clItems.map((it,i)=>({label:it, ok:$(`[data-ci="${i}"]`).checked}));
     const rec={inspector:$('#f_inspector').value.trim(), truck,
-      date:$('#f_date').value, notes:$('#f_notes').value.trim(), items, _t:nowTime(), _d:todayDate(), _id:Date.now()};
+      date:$('#f_date').value, notes:$('#f_notes').value.trim(), items,
+      signature:sig?sig.data():'', inspectionPhoto:$('#f_insp_photo').value||'',
+      _t:nowTime(), _d:todayDate(), _id:Date.now(), _by:DB.meta.operator||''};
     linkChainOnSave(rec);
-    DB.reg[r.key].push(rec); saveReg(r.key); closeSheet(); renderRegList(); renderHome();
+    DB.reg[r.key].push(rec); saveReg(r.key); audit('فحص شاحنة',truck);
+    closeSheet(); renderRegList(); renderHome();
     toast('تم حفظ مرحلة الفحص — يمكن التصدير الآن');
   };
   openSheet('مرحلة الفحص — قائمة الجودة');
@@ -1806,6 +2096,31 @@ function openSettings(){
     <div class="setgrp"><div class="gh">ضوابط التشغيل</div><div style="padding:12px 14px 14px">
       <div class="field"><label>الهوبر المعتمد (أرقام مفصولة بفواصل)</label><input id="s_hop" value="${esc(m.hoppers)}" placeholder="مثال: 1، 2، 3">
         <div class="hint">عند تعبئته، يُمنع التحميل من هوبر خارج القائمة إلا بتجاوز موثّق. اتركه فارغاً لتعطيل التحقق.</div></div>
+      <div class="frow">
+        <div class="field"><label>فرق الوزن المسموح (كغ)</label><input id="s_wtol" type="number" value="${esc(prefs().weightToleranceKg)}"></div>
+        <div class="field"><label>أرشفة بعد (يوم) — 0=معطّل</label><input id="s_ret" type="number" value="${esc(prefs().retentionDays)}"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>سقف صرف يومي (ريال) — 0=معطّل</label><input id="s_capd" type="number" value="${esc(prefs().dailySpendCap)}"></div>
+        <div class="field"><label>سقف صرف الوردية (ريال)</label><input id="s_caps" type="number" value="${esc(prefs().shiftSpendCap)}"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="s_barcode" ${prefs().mandatoryBarcodeExport?'checked':''}><span>إلزام مسح باركود قبل التصدير</span></label>
+      <label class="check"><input type="checkbox" id="s_autorec" ${prefs().autoReconcile?'checked':''}><span>إنشاء مطابقة تلقائياً عند الاستقبال</span></label>
+      <label class="check"><input type="checkbox" id="s_deputyro" ${prefs().deputyReadOnly?'checked':''}><span>نائب الرئيس — قراءة فقط (بدون إدخال)</span></label>
+      <label class="check"><input type="checkbox" id="s_opsync" ${prefs().mandatoryOperatorSync?'checked':''}><span>إلزام المزامنة على أجهزة الموظفين</span></label>
+      <label class="check"><input type="checkbox" id="s_partial" ${prefs().partialSync?'checked':''}><span>مزامنة جزئية حسب دور الموظف</span></label>
+    </div></div>
+    <div class="setgrp"><div class="gh">واجهة وتجربة الاستخدام</div><div style="padding:12px 14px 14px">
+      <label class="check"><input type="checkbox" id="s_dark" ${prefs().darkMode?'checked':''}><span>الوضع الداكن</span></label>
+      <label class="check"><input type="checkbox" id="s_glove" ${prefs().gloveMode?'checked':''}><span>وضع القفازات (أزرار أكبر)</span></label>
+      <label class="check"><input type="checkbox" id="s_alertv" ${prefs().alertVibrate?'checked':''}><span>اهتزاز عند فجوات السلسلة</span></label>
+      <label class="check"><input type="checkbox" id="s_alerts" ${prefs().alertSound?'checked':''}><span>تنبيه صوتي عند فجوات السلسلة</span></label>
+      <div class="field" style="margin-top:8px"><label>قفل التطبيق (PIN — اتركه فارغاً للإلغاء)</label><input id="s_pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••"></div>
+      <div class="field"><label>بنود الفحص (سطر لكل بند — فارغ=افتراضي)</label><textarea id="s_checklist" rows="4" placeholder="اتركه فارغاً لاستخدام البنود الافتراضية">${esc((prefs().checklistItems||[]).join('\n'))}</textarea></div>
+    </div></div>
+    <div class="setgrp"><div class="gh">سجل التدقيق والأمان</div><div style="padding:12px 14px 14px">
+      <button class="btn btn-ghost" id="s_audit" style="width:100%;margin-bottom:8px;justify-content:center">عرض سجل التدقيق (${(DB.auditLog||[]).length})</button>
+      <button class="btn btn-ghost" id="s_fails" style="width:100%;justify-content:center">محاولات دخول فاشلة (${(DB.loginFails||[]).length})</button>
     </div></div>
     <div class="setgrp"><div class="gh">مشاركة التطبيق (QR)</div><div style="padding:12px 14px 14px">
       <div class="field"><label>رابط التطبيق</label><input id="s_url" value="${esc(location.href)}">
@@ -1832,8 +2147,11 @@ function openSettings(){
     </div></div>
     <div class="setgrp"><div class="gh">البيانات والتخزين</div><div style="padding:12px 14px 14px">
       <div id="s_storage" class="hint" style="margin-bottom:9px">حالة التخزين: —</div>
+      <div class="hint" style="margin-bottom:8px">مزامنة معلّقة: <b>${(DB.syncQueue||[]).length}</b> · آخر نسخ: ${esc(m.lastBackupDate||'—')}</div>
       <button class="btn btn-ghost" id="s_selftest" style="width:100%;margin-bottom:9px;justify-content:center">فحص حفظ البيانات الآن</button>
-      <button class="btn btn-ghost" id="s_export" style="width:100%;margin-bottom:9px;justify-content:center">تصدير كل السجلات (CSV)</button>
+      <button class="btn btn-ghost" id="s_export" style="width:100%;margin-bottom:9px;justify-content:center">تصدير كل السجلات (Excel/CSV)</button>
+      <button class="btn btn-ghost" id="s_backup" style="width:100%;margin-bottom:9px;justify-content:center">نسخ احتياطي مشفّر (JSON)</button>
+      <button class="btn btn-ghost" id="s_restore" style="width:100%;margin-bottom:9px;justify-content:center">استعادة من نسخة احتياطية</button>
       <button class="btn" id="s_reset" style="width:100%;background:var(--danger-bg);color:var(--danger);justify-content:center">تصفير كل البيانات</button>
     </div></div>
     <div class="setgrp"><div class="gh">الإصدار والاعتماد</div><div style="padding:12px 14px 14px">
@@ -1853,7 +2171,20 @@ function openSettings(){
     DB.meta.ship=$('#s_ship').value.trim()||'—'; DB.meta.port=$('#s_port').value.trim()||'—';
     DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value;
     DB.meta.hoppers=$('#s_hop').value.trim(); DB.meta.approvedBy=$('#s_appr').value.trim();
-    applySession();  // keep operator/role from the logged-in account
+    const cl=$('#s_checklist').value.trim().split(/\n/).map(s=>s.trim()).filter(Boolean);
+    const pin=$('#s_pin').value.trim();
+    const p=Object.assign({}, prefs(), {
+      weightToleranceKg:Number($('#s_wtol').value)||50, retentionDays:Number($('#s_ret').value)||0,
+      dailySpendCap:Number($('#s_capd').value)||0, shiftSpendCap:Number($('#s_caps').value)||0,
+      mandatoryBarcodeExport:$('#s_barcode').checked, autoReconcile:$('#s_autorec').checked,
+      deputyReadOnly:$('#s_deputyro').checked, mandatoryOperatorSync:$('#s_opsync').checked,
+      partialSync:$('#s_partial').checked, darkMode:$('#s_dark').checked, gloveMode:$('#s_glove').checked,
+      alertVibrate:$('#s_alertv').checked, alertSound:$('#s_alerts').checked,
+      checklistItems:cl.length?cl:null,
+      appPinHash:pin?await hashPass(pin):prefs().appPinHash
+    });
+    DB.meta.prefs=p; applyPrefs();
+    applySession();
     const syUrl=$('#sy_url').value.trim().replace(/\/+$/,''), syTeam=$('#sy_team').value.trim(), syEn=$('#sy_en').checked;
     Sync.save({ url:syUrl, team:syTeam, enabled: syEn && !!syUrl && !!syTeam,
       apiKey:$('#sy_key').value.trim(), email:$('#sy_email').value.trim(), password:$('#sy_pass').value });
@@ -1885,7 +2216,11 @@ function openSettings(){
     const el=$('#s_storage'); if(el) el.innerHTML='حالة التخزين: <b style="color:'+(r.ok?'var(--ok)':'var(--danger)')+'">'+(r.ok?'يعمل ✓':'لا يعمل ✗')+'</b> — '+esc(backendName(r.backend));
     toast(r.ok?('الحفظ يعمل · '+backendName(r.backend)):'تعذّر الحفظ على هذا الجهاز');
   };
-  $('#s_export').onclick=exportAll;
+  $('#s_export').onclick=exportAllExcel;
+  $('#s_backup').onclick=exportEncryptedBackup;
+  $('#s_restore').onclick=importEncryptedBackup;
+  $('#s_audit').onclick=openAuditLog;
+  $('#s_fails').onclick=openLoginFailLog;
   $('#s_qr').onclick=()=>{ const u=$('#s_url').value.trim(); if(!u){ toast('أدخل الرابط أولاً'); return; } showQR('رمز فتح التطبيق', u, 'app_link'); };
   $('#s_reset').onclick=async()=>{
     if(!confirm('سيتم حذف كل السجلات نهائياً. متابعة؟')) return;
@@ -1991,6 +2326,11 @@ function openHandover(){
   const ovr=Object.values(DB.reg).reduce((a,arr)=>a+arr.filter(x=>x&&x._override).length,0);
   const leaderCases=diffs + DB.reg.violations.length + ovr;
   const m=DB.meta;
+  const prev=DB.handovers.length? DB.handovers[DB.handovers.length-1] : null;
+  const cmp=prev?`<div class="report" style="margin-top:14px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">مقارنة مع الوردية السابقة (${esc(prev.shift)} · ${esc(prev._d)})</div>
+    <div class="rline"><span class="k">محمّلة</span><span class="v">${c('export')} <small style="color:var(--ink3)">(كانت ${prev.counts?prev.counts.export:'—'})</small></span></div>
+    <div class="rline"><span class="k">مرحّلة</span><span class="v">${c('dispatch')} <small style="color:var(--ink3)">(كانت ${prev.counts?prev.counts.dispatch:'—'})</small></span></div>
+    <div class="rline"><span class="k">مستلمة</span><span class="v">${c('reception')} <small style="color:var(--ink3)">(كانت ${prev.counts?prev.counts.reception:'—'})</small></span></div></div>`:'';
   $('#hoBody').innerHTML=`
     <div class="report">
       <h3>محضر تسليم واستلام الوردية</h3>
@@ -2018,9 +2358,10 @@ function openHandover(){
         <div class="field"><label>اسم المستلم <span style="color:var(--danger)">*</span></label><input id="ho_to"></div>
       </div>
       <button class="btn btn-pri" id="ho_close" style="width:100%;margin-bottom:9px">اعتماد وإغلاق الوردية</button>
+      <button class="btn btn-ghost" id="ho_wa" style="width:100%;margin-bottom:9px">مشاركة واتساب</button>
       <button class="btn btn-ghost" style="width:100%" onclick="window.print()">طباعة / حفظ التقرير PDF</button>
       ${DB.handovers.length?`<div class="hint" style="text-align:center;margin-top:10px">آخر إغلاق: ${esc(DB.handovers[DB.handovers.length-1]._d)} ${esc(DB.handovers[DB.handovers.length-1]._t)} — ${esc(DB.handovers[DB.handovers.length-1].shift)}</div>`:''}
-    </div>
+    </div>${cmp}
     <div class="report" style="margin-top:14px;text-align:center">
       <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;font-weight:600">رمز ملخص الوردية — للمسح من التقرير المطبوع</div>
       <div class="qrimg" id="hoQr" style="margin:0 auto"><div class="qrload">جارٍ توليد الرمز…</div></div>
@@ -2033,6 +2374,7 @@ function openHandover(){
   } else {
     const el=$('#hoQr'); if(el) el.innerHTML='<div class="qrerr">تعذّر تحميل مولّد الرمز<br>(تحقق من الاتصال)</div>';
   }
+  $('#ho_wa').onclick=()=>shareText('تسليم وردية', summary);
   $('#ho_close').onclick=async()=>{
     const from=$('#ho_from').value.trim(), to=$('#ho_to').value.trim(), sm=$('#ho_summary').value.trim();
     if(!from||!to){ toast('سجّل اسم المسلّم والمستلم لإغلاق الوردية'); return; }
@@ -2109,7 +2451,27 @@ const GOV = [
     ['يُسجَّل عند الترحيل: الوزن فارغ والوزن محمّل (كغ) ويُحسب الصافي تلقائياً.','on'],
     ['يُسجَّل عند الاستقبال: الوزن فارغ والوزن محمّل (كغ) ويُقارَن بصافي الترحيل.','on'],
     ['المطابقة المستقلة تجلب الأوزان من السلسلة وتُظهر فرق الصافي.','on'],
-    ['أي فرق وزن بين الترحيل والاستقبال يتطلب توثيقاً أو تجاوزاً معتمداً.','on']
+    ['أي فرق وزن بين الترحيل والاستقبال يتطلب توثيقاً أو تجاوزاً معتمداً.','on'],
+    ['حد فرق الوزن المسموح قابل للضبط من الإعدادات.','on']
+  ]},
+  { t:'الأمان والتدقيق والنسخ', rules:[
+    ['سجل تدقيق يوثّق كل حفظ ونسخ احتياطي واستعادة.','on'],
+    ['محاولات الدخول الفاشلة تُسجَّل للمراجعة.','on'],
+    ['قفل التطبيق برمز PIN اختياري من الإعدادات.','on'],
+    ['نسخ احتياطي يومي تلقائي واستعادة من ملف JSON.','on'],
+    ['أرشفة السجلات القديمة حسب سياسة الاحتفاظ.','on']
+  ]},
+  { t:'التقارير والمشاركة', rules:[
+    ['تقرير الوردية PDF وملخص واتساب من شاشة التسليم.','on'],
+    ['تقرير مالي شهري وتصدير Excel موحّد لكل السجلات.','on'],
+    ['PDF لسلسلة الشاحنة من عرض الترابط.','on'],
+    ['مقارنة أرقام الوردية الحالية بالسابقة عند التسليم.','on']
+  ]},
+  { t:'تجربة المستخدم المتقدمة', rules:[
+    ['الوضع الداكن ووضع القفازات من الإعدادات.','on'],
+    ['بحث عالمي برقم الشاحنة وتدفق «شاحنة جديدة».','on'],
+    ['توقيع رقمي وصور فحص في مرحلة الفحص.','on'],
+    ['تنبيه صوتي/اهتزاز عند فجوات سلسلة الشاحنات.','on']
   ]}
 ];
 function openTruckChain(truck){
@@ -2152,8 +2514,10 @@ function openTruckChain(truck){
     ${chainDotsHtml(truck)}</div>
     <div class="chain-timeline">${steps}</div>${extra}`;
   $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="chClose" style="flex:.6">إغلاق</button>
-    <button class="btn btn-pri" id="chScan">${svg('scan',16)} مسح باركود شاحنة أخرى</button>`;
+    <button class="btn btn-ghost" id="chPdf" style="flex:1">${svg('doc',16)} PDF</button>
+    <button class="btn btn-pri" id="chScan">${svg('scan',16)} مسح</button>`;
   $('#chClose').onclick=closeSheet;
+  $('#chPdf').onclick=()=>printTruckChainPdf(truck);
   $('#chScan').onclick=()=>BarcodeScanner.open(v=>{ closeSheet(); openTruckChain(v); });
   $('#sheetBody').querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.goto; closeSheet(); openRegister(k);
@@ -2345,7 +2709,12 @@ function closeDeviceSetup(){ $('#deviceSetupGate').classList.add('hidden'); docu
 async function configureDevice(mode){
   DB.deviceSetup={mode, configured:true}; await saveDeviceSetup();
   if(mode==='admin') await ensureSeedAdmin();
-  if(mode==='operator' && Sync.active()) await Sync.pullUsers();
+  if(mode==='operator'){
+    if(prefs().mandatoryOperatorSync && !Sync.active()){
+      toast('يُفضَّل ضبط المزامنة من المشرف أولاً — يمكنك المسح من QR');
+    }
+    if(Sync.active()) await Sync.pullUsers();
+  }
   closeDeviceSetup(); await openLogin();
 }
 $('#setup_admin').onclick=()=>configureDevice('admin');
@@ -2445,9 +2814,14 @@ async function doLogin(){
     return;
   }
   if(u.active===false){ err.textContent='الحساب موقوف. راجع مسؤول النظام.'; return; }
-  if(!(await verifyPass(pass, u.pass))){ err.textContent='كلمة السر غير صحيحة'; return; }
+  if(!(await verifyPass(pass, u.pass))){ err.textContent='كلمة السر غير صحيحة'; await logFailedLogin(uname); return; }
+  if(isOperatorDevice() && prefs().mandatoryOperatorSync && !Sync.active()){
+    err.textContent='يجب تفعيل المزامنة على جهاز الموظف — راجع المشرف'; return;
+  }
   DB.sessionUser=u.username; await Store.set('session', u.username);
-  applySession(); closeLogin(); goToRoleHome(u);
+  applySession(); closeLogin();
+  if(u.mustChange){ openChangePassword(u); return; }
+  goToRoleHome(u);
 }
 $('#lg_btn').onclick=doLogin;
 $('#lg_pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
@@ -2532,6 +2906,187 @@ function openUserForm(u){
   openSheet(isEdit?'تعديل مستخدم':'مستخدم جديد');
 }
 
+/* ============ v1.8 extended features ============ */
+async function shareText(title, text){
+  try{ const S=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Share;
+    if(S){ await S.share({title, text, dialogTitle:title}); return; }
+  }catch(e){}
+  if(navigator.share){ try{ await navigator.share({title,text}); return; }catch(e){} }
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+function exportAllExcel(){
+  const rows=[['السجل','الحقول...']];
+  REGS.forEach(r=>{
+    const data=DB.reg[r.key]||[]; if(!data.length) return;
+    if(r.isChecklist){
+      rows.push([r.title]); rows.push(['الفاحص','الشاحنة','التاريخ',...checklistItems(),'ملاحظات']);
+      data.forEach(rec=>rows.push([rec.inspector,rec.truck,rec.date,...rec.items.map(x=>x.ok?'نعم':'لا'),rec.notes]));
+    } else {
+      rows.push([r.title]); rows.push(r.fields.map(f=>f.l).concat(['الوقت','التاريخ','المناوب']));
+      data.forEach(rec=>rows.push(r.fields.map(f=>f.t==='photo'?(rec[f.n]?'[صورة]':'') : rec[f.n]).concat([rec._t,rec._d,rec._by])));
+    }
+    rows.push([]);
+  });
+  downloadCsv('wheat-ops-كل-السجلات-'+todayDate()+'.csv', rows);
+  toast('تم تصدير ملف Excel/CSV موحّد');
+}
+async function exportEncryptedBackup(){
+  const payload={v:APP_VERSION, date:todayDate(), meta:DB.meta, reg:DB.reg, handovers:DB.handovers, users:DB.users.map(u=>({...u,pass:'[redacted]'}))};
+  const json=JSON.stringify(payload);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='wheat-ops-backup-'+todayDate()+'.json'; a.click();
+  DB.meta.lastBackupDate=todayDate(); await saveMeta(); audit('نسخ احتياطي','JSON');
+  toast('تم حفظ النسخة الاحتياطية');
+}
+function importEncryptedBackup(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json,.json';
+  inp.onchange=async()=>{
+    const f=inp.files[0]; if(!f) return;
+    try{
+      const data=JSON.parse(await f.text());
+      if(!data||!data.reg){ toast('ملف غير صالح'); return; }
+      if(!confirm('استعادة البيانات ستدمج السجلات. متابعة؟')) return;
+      Object.keys(data.reg).forEach(k=>{ if(DB.reg[k]) DB.reg[k]=unionById(DB.reg[k],data.reg[k]); else DB.reg[k]=data.reg[k]; });
+      for(const r of REGS) await saveReg(r.key);
+      if(data.meta) DB.meta=Object.assign({},DB.meta,data.meta); await saveMeta(); applyPrefs();
+      audit('استعادة نسخة','من ملف'); renderHome(); toast('تمت الاستعادة');
+    }catch(e){ toast('تعذّرت قراءة الملف'); }
+  };
+  inp.click();
+}
+function openAuditLog(){
+  const rows=(DB.auditLog||[]).slice().reverse().slice(0,80).map(e=>
+    `<div class="rline"><span class="k">${esc(e.d)} ${esc(e.t)} · ${esc(e.user)}</span><span class="v">${esc(e.action)} ${esc(e.detail)}</span></div>`).join('');
+  $('#sheetBody').innerHTML=rows||'<div class="empty"><p>لا سجلات تدقيق بعد.</p></div>';
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="alClose" style="width:100%">إغلاق</button>';
+  $('#alClose').onclick=closeSheet; openSheet('سجل التدقيق');
+}
+function openLoginFailLog(){
+  const rows=(DB.loginFails||[]).slice().reverse().slice(0,50).map(e=>
+    `<div class="rline"><span class="k">${esc(e.d)} ${esc(e.t)}</span><span class="v mono">${esc(e.username)}</span></div>`).join('');
+  $('#sheetBody').innerHTML=rows||'<div class="empty"><p>لا محاولات فاشلة.</p></div>';
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="lfClose" style="width:100%">إغلاق</button>';
+  $('#lfClose').onclick=closeSheet; openSheet('محاولات دخول فاشلة');
+}
+function openFinanceMonthlyReport(){
+  const m=todayDate().slice(0,7);
+  const rows=(DB.reg.finance||[]).filter(x=>(x.date||x._d||'').slice(0,7)===m);
+  const total=rows.filter(x=>x.approval==='معتمد').reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const byCat={};
+  rows.forEach(x=>{ const c=x.expenseCat||'أخرى'; byCat[c]=(byCat[c]||0)+(Number(x.amount)||0); });
+  const lines=Object.entries(byCat).map(([k,v])=>`<div class="rline"><span class="k">${esc(k)}</span><span class="v mono">${v.toLocaleString('ar-SA')} ريال</span></div>`).join('');
+  $('#sheetBody').innerHTML=`<div style="font-weight:600;margin-bottom:10px">تقرير مالي — ${esc(m)}</div>
+    <div class="rline"><span class="k">إجمالي معتمد</span><span class="v mono">${total.toLocaleString('ar-SA')} ريال</span></div>
+    <div class="rline"><span class="k">عدد السجلات</span><span class="v">${rows.length}</span></div>${lines}
+    <button class="btn btn-ghost" id="fin_print" style="width:100%;margin-top:12px;justify-content:center">طباعة التقرير</button>`;
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="finClose" style="width:100%">إغلاق</button>';
+  $('#finClose').onclick=closeSheet;
+  $('#fin_print').onclick=()=>{ const w=window.open('','_blank'); w.document.write('<html dir="rtl"><body style="font-family:sans-serif;padding:20px"><h2>تقرير مالي '+m+'</h2><p>الإجمالي: '+total+' ريال</p></body></html>'); w.print(); };
+  openSheet('التقرير المالي الشهري');
+}
+function openGlobalSearch(){
+  $('#sheetBody').innerHTML=`<div class="field"><label>بحث برقم الشاحنة</label>
+    <div class="scanrow"><input id="gs_truck" placeholder="رقم الشاحنة"><button type="button" class="btn-scan" id="gs_scan">${svg('scan',20)}</button></div></div>
+    <div id="gs_results" class="hint" style="margin-top:10px"></div>`;
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="gsClose" style="flex:.6">إغلاق</button><button class="btn btn-pri" id="gs_go">عرض السلسلة</button>';
+  $('#gsClose').onclick=closeSheet;
+  $('#gs_scan').onclick=()=>BarcodeScanner.open(v=>{ $('#gs_truck').value=v; runGlobalSearch(v); });
+  $('#gs_go').onclick=()=>runGlobalSearch($('#gs_truck').value.trim());
+  $('#gs_truck').onkeydown=e=>{ if(e.key==='Enter') runGlobalSearch($('#gs_truck').value.trim()); };
+  openSheet('بحث شاحنة — كل السجلات');
+}
+function runGlobalSearch(truck){
+  truck=normTruck(truck); const el=$('#gs_results'); if(!el) return;
+  if(!truck){ el.textContent='أدخل رقم الشاحنة'; return; }
+  const hits=[];
+  REGS.forEach(r=>{ (DB.reg[r.key]||[]).forEach(rec=>{ if(normTruck(rec.truck)===truck) hits.push(r.title+' · '+rec._d+' '+rec._t); }); });
+  el.innerHTML=hits.length? hits.map(h=>'<div>• '+esc(h)+'</div>').join('') : 'لا نتائج لهذه الشاحنة';
+  $('#gs_go').onclick=()=>{ closeSheet(); openTruckChain(truck); };
+}
+function openNewTruckFlow(){
+  let truck='';
+  $('#sheetBody').innerHTML=`<div class="hint" style="margin-bottom:12px">تدفق سريع: فحص ثم تصدير لشاحنة جديدة</div>
+    <div class="field"><label>رقم الشاحنة</label><div class="scanrow"><input id="nt_truck"><button type="button" class="btn-scan" id="nt_scan">${svg('scan',20)}</button></div></div>`;
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="ntCancel" style="flex:.6">إلغاء</button><button class="btn btn-pri" id="ntStart">بدء الفحص</button>';
+  $('#ntCancel').onclick=closeSheet;
+  $('#nt_scan').onclick=()=>BarcodeScanner.open(v=>{ $('#nt_truck').value=v; truck=v; });
+  $('#ntStart').onclick=()=>{
+    truck=normTruck($('#nt_truck').value); if(!truck){ toast('أدخل رقم الشاحنة'); return; }
+    closeSheet(); openRegister('checklist');
+    setTimeout(()=>{ openChecklistForm(); const t=$('#f_truck'); if(t) t.value=truck; toast('أكمل الفحص ثم سيُفتح التصدير'); },300);
+  };
+  openSheet('شاحنة جديدة');
+}
+function printTruckChainPdf(truck){
+  const chain=buildTruckChain(truck);
+  const w=window.open('','_blank');
+  let html='<html dir="rtl"><head><meta charset="utf-8"><title>شاحنة '+truck+'</title></head><body style="font-family:sans-serif;padding:16px">';
+  html+='<h2>سلسلة الشاحنة '+truck+'</h2><p>باخرة: '+esc(DB.meta.ship)+' · '+todayDate()+'</p>';
+  CHAIN_STAGES.forEach(s=>{ const rec=chain[s.key]; html+='<h3>'+s.label+'</h3><pre>'+(rec?JSON.stringify(rec,null,2):'—')+'</pre>'; });
+  html+='</body></html>'; w.document.write(html); w.document.close(); w.print();
+}
+async function archiveOldRecords(){
+  const days=Number(prefs().retentionDays)||0; if(!days) return;
+  const cut=new Date(); cut.setDate(cut.getDate()-days); const cutStr=cut.toISOString().slice(0,10);
+  let moved=0;
+  if(!DB.archive) DB.archive={regs:{}};
+  REGS.forEach(r=>{
+    const keep=[], arch=[];
+    (DB.reg[r.key]||[]).forEach(rec=>{ if((rec._d||rec.date||todayDate())<cutStr) arch.push(rec); else keep.push(rec); });
+    if(arch.length){ DB.archive.regs[r.key]=(DB.archive.regs[r.key]||[]).concat(arch); DB.reg[r.key]=keep; moved+=arch.length; saveReg(r.key); }
+  });
+  if(moved){ await Store.set('archive',DB.archive); audit('أرشفة',moved+' سجل'); }
+}
+async function maybeDailyBackup(){
+  if(!prefs().autoBackupDaily) return;
+  if(DB.meta.lastBackupDate===todayDate()) return;
+  const payload={v:APP_VERSION, date:todayDate(), meta:DB.meta, reg:DB.reg, handovers:DB.handovers};
+  await Store.set('autoBackup', payload);
+  DB.meta.lastBackupDate=todayDate(); await saveMeta();
+  audit('نسخ تلقائي','محلي');
+}
+function openChangePassword(u){
+  $('#sheetBody').innerHTML=`<div class="hint" style="margin-bottom:12px">يجب تغيير كلمة السر قبل المتابعة</div>
+    <div class="field"><label>كلمة سر جديدة</label><input id="cp_pass" type="password"></div>
+    <div class="field"><label>تأكيد</label><input id="cp_pass2" type="password"></div>`;
+  $('#sheetFoot').innerHTML='<button class="btn btn-pri" id="cp_save" style="width:100%">حفظ ومتابعة</button>';
+  $('#cp_save').onclick=async()=>{
+    const p1=$('#cp_pass').value, p2=$('#cp_pass2').value;
+    if(!p1||p1.length<4){ toast('كلمة سر قصيرة'); return; }
+    if(p1!==p2){ toast('التأكيد غير متطابق'); return; }
+    u.pass=await hashPass(p1); u.mustChange=false; await saveUsers(); closeSheet(); goToRoleHome(u); toast('تم تغيير كلمة السر');
+  };
+  openSheet('تغيير كلمة السر');
+}
+function needsPinUnlock(){
+  const h=prefs().appPinHash; return !!(h && !DB.pinUnlocked);
+}
+async function continueAfterPin(){
+  if(currentUser()){
+    applySession(); applyOperatorLayout();
+    const u=currentUser();
+    if(u && u.mustChange){ openChangePassword(u); return; }
+    if(u && !isSupervisorRole(u.role) && ROLE_PRIMARY[u.role]) goToRoleHome(u);
+    else renderHome();
+  } else if(!DB.deviceSetup || !DB.deviceSetup.configured){ openDeviceSetup(); }
+  else { await openLogin(); }
+}
+async function checkPin(){
+  const v=$('#pin_input').value; const h=prefs().appPinHash;
+  if((await hashPass(v))===h){ DB.pinUnlocked=true; $('#pinGate').classList.add('hidden'); document.body.style.overflow=''; await continueAfterPin(); return true; }
+  $('#pin_err').textContent='رمز غير صحيح'; await logFailedLogin('pin'); return false;
+}
+function showPinGate(){
+  if(!needsPinUnlock()) return;
+  $('#pinGate').classList.remove('hidden'); document.body.style.overflow='hidden';
+  $('#pin_input').value=''; $('#pin_err').textContent='';
+  setTimeout(()=>$('#pin_input').focus(),60);
+}
+$('#pin_unlock').onclick=checkPin;
+$('#pin_input').addEventListener('keydown',e=>{ if(e.key==='Enter') checkPin(); });
+$('#globalSearchBtn').onclick=openGlobalSearch;
+$('#newTruckBtn').onclick=openNewTruckFlow;
+
 /* ============ Native (Capacitor) integration ============ */
 /* When running inside the Android app, tint the system status bar to match the
    navy command bar and disable web overscroll. Safe no-op in a normal browser. */
@@ -2565,9 +3120,13 @@ if(window.Capacitor){ initNative(); }
   await loadAll();
   if(!DB.meta.startDate){ DB.meta.startDate=todayDate(); }
   try{ Sync.load(); if(Sync.active()){ Sync.start(); if(isOperatorDevice() && !currentUser()) await Sync.pullUsers(); } }catch(e){}
+  await archiveOldRecords();
+  await maybeDailyBackup();
+  if(needsPinUnlock()){ showPinGate(); return; }
   if(currentUser()){
     applySession(); applyOperatorLayout();
     const u=currentUser();
+    if(u && u.mustChange){ openChangePassword(u); return; }
     if(u && !isSupervisorRole(u.role) && ROLE_PRIMARY[u.role]) goToRoleHome(u);
     else renderHome();
   } else if(!DB.deviceSetup || !DB.deviceSetup.configured){ openDeviceSetup(); }
