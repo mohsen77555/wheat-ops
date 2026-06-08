@@ -421,6 +421,7 @@
     </div>
     <div class="rv-tools">
       <button class="btn btn-pri" id="regAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg><span id="regAddLbl">إضافة</span></button>
+      <button class="btn btn-ghost" id="regScan" title="مسح باركود بالكاميرا"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M7 12h10"/></svg></button>
       <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="regSearch" placeholder="بحث..."></div>
       <button class="btn btn-ghost" id="regCsv" title="تصدير CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l4-4m-4 4l-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
     </div>
@@ -923,7 +924,7 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.7.1';
+const APP_VERSION='1.7.2';
 const WORKFLOW_KEYS=['checklist','export','dispatch','reception'];
 const ROLE_PRIMARY={
   'مسؤول التصدير':'export','مسؤول الترحيل':'dispatch','مسؤول الاستقبال':'reception',
@@ -1257,6 +1258,11 @@ function openRegister(key){
 }
 $('#regSearch').oninput=e=>{ FILTER=e.target.value.trim(); renderRegList(); };
 $('#regAdd').onclick=()=> CUR.isChecklist? openChecklistForm() : openForm(CUR);
+$('#regScan').onclick=()=>{
+  if(CUR && CUR.isChecklist){ openChecklistForm(); setTimeout(()=>{ const t=$('#f_truck'); if(t) BarcodeScanner.open(v=>{ t.value=v; }); }, 300); }
+  else if($('#f_truck')){ BarcodeScanner.open(v=>{ const t=$('#f_truck'); t.value=v; t.dispatchEvent(new Event('change')); }); }
+  else { scanIntoRegisterField(); }
+};
 $('#regCsv').onclick=()=> exportCsv(CUR);
 
 function recMatches(rec){
@@ -1850,11 +1856,59 @@ function openGovernance(){
   show('gov');
 }
 
-/* ============ Barcode scanner ============ */
+/* ============ Barcode scanner (native ML Kit on Android + web camera fallback) ============ */
+function barcodePlugin(){
+  try{
+    const C=window.Capacitor;
+    return (C && C.Plugins && C.Plugins.BarcodeScanner) ? C.Plugins.BarcodeScanner : null;
+  }catch(e){ return null; }
+}
+function isNativeApp(){
+  try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }
+  catch(e){ return false; }
+}
 const BarcodeScanner = {
   _stream:null, _timer:null, _active:false,
-  async open(onResult){
-    if(this._active) return;
+  async ensureNativeReady(BS){
+    if(!BS || !isNativeApp()) return true;
+    try{
+      if(window.Capacitor.getPlatform()!=='android') return true;
+      if(!BS.isGoogleBarcodeScannerModuleAvailable) return true;
+      const mod=await BS.isGoogleBarcodeScannerModuleAvailable();
+      if(mod && mod.available) return true;
+      if(BS.installGoogleBarcodeScannerModule){
+        toast('جارٍ تجهيز ماسح الباركود من Google Play…');
+        await BS.installGoogleBarcodeScannerModule();
+        await new Promise(r=>setTimeout(r, 2500));
+      }
+    }catch(e){}
+    return true;
+  },
+  async nativeScan(){
+    const BS=barcodePlugin();
+    if(!BS || !isNativeApp()) return null;
+    try{
+      const sup=await BS.isSupported();
+      if(sup && sup.supported===false) return null;
+      await this.ensureNativeReady(BS);
+      if(BS.requestPermissions){
+        const perm=await BS.requestPermissions();
+        if(perm && perm.camera==='denied'){
+          toast('يُرجى السماح باستخدام الكاميرا من إعدادات التطبيق');
+          if(BS.openSettings) await BS.openSettings();
+          return null;
+        }
+      }
+      const res=await BS.scan({ autoZoom:true });
+      const bc=res && res.barcodes && res.barcodes[0];
+      if(bc) return String(bc.rawValue||bc.displayValue||'').trim();
+    }catch(e){
+      const msg=String((e&&e.message)||e||'');
+      if(/cancel/i.test(msg)) return null;
+    }
+    return null;
+  },
+  async openWeb(onResult){
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       const manual=prompt('الماسح غير متاح — أدخل الرمز يدوياً:');
       if(manual && onResult) onResult(String(manual).trim());
@@ -1891,6 +1945,16 @@ const BarcodeScanner = {
     };
     detect();
   },
+  async open(onResult){
+    if(this._active) return;
+    const native=await this.nativeScan();
+    if(native){
+      if(onResult) onResult(native);
+      toast('تم المسح: '+native);
+      return;
+    }
+    await this.openWeb(onResult);
+  },
   close(){
     this._active=false;
     if(this._timer){ clearTimeout(this._timer); this._timer=null; }
@@ -1899,6 +1963,15 @@ const BarcodeScanner = {
     document.body.style.overflow='';
   }
 };
+function scanIntoRegisterField(){
+  const truck=$('#f_truck');
+  BarcodeScanner.open(v=>{
+    if(truck){ truck.value=v; truck.dispatchEvent(new Event('change')); truck.dispatchEvent(new Event('blur')); return; }
+    const search=$('#regSearch');
+    if(search){ search.value=v; FILTER=v; renderRegList(); toast('بحث عن: '+v); return; }
+    toast('تم المسح: '+v);
+  });
+}
 
 /* ============ Device setup ============ */
 function openDeviceSetup(){
