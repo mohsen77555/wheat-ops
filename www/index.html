@@ -812,13 +812,14 @@ const REGS = [
       {n:'driver',l:'اسم السائق',t:'text'},
       {n:'mobile',l:'رقم الجوال',t:'tel',mono:true},
       {n:'destination',l:'الوجهة',t:'text'},
-      {n:'weight',l:'الكمية / الوزن',t:'text'},
+      {n:'weightEmpty',l:'الوزن فارغ (كغ)',t:'number',req:true,mono:true},
+      {n:'weightLoaded',l:'الوزن محمّل (كغ)',t:'number',req:true,mono:true},
       {n:'exitTime',l:'وقت الخروج',t:'time'},
       {n:'hopper',l:'رقم الهوبر',t:'text',mono:true},
       {n:'hold',l:'رقم الخن',t:'text',mono:true},
       {n:'officer',l:'مسؤول الترحيل',t:'text'},
       {n:'notes',l:'ملاحظات',t:'textarea'}
-    ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['orderNo','exitTime','destination','weight','hopper','officer'] },
+    ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['orderNo','weightEmpty','weightLoaded','_netWeight','exitTime','destination','hopper','officer'] },
 
   { key:'reception', title:'الاستقبال', short:'الخطوة ٤ — استلام ومطابقة الوصول', icon:'reception',
     color:{bg:'#EAEFF5',fg:'#1E3F5A'}, addLabel:'تسجيل استقبال', workflowStage:4,
@@ -829,12 +830,14 @@ const REGS = [
       {n:'arrival',l:'وقت الوصول',t:'time'},
       {n:'unloadTime',l:'وقت التفريغ',t:'time'},
       {n:'status',l:'حالة الحمولة',t:'select',o:['سليمة','عليها ملاحظة','مرفوضة']},
-      {n:'qty',l:'الكمية المستلمة',t:'text'},
+      {n:'weightEmpty',l:'الوزن فارغ (كغ)',t:'number',req:true,mono:true},
+      {n:'weightLoaded',l:'الوزن محمّل (كغ)',t:'number',req:true,mono:true},
+      {n:'qty',l:'الكمية المستلمة (كغ صافي)',t:'text'},
       {n:'officer',l:'مسؤول الاستقبال',t:'text'},
       {n:'notes',l:'ملاحظات',t:'textarea'}
     ], titleField:'truck', titlePrefix:'شاحنة', statusField:'status',
     statusTone:{'سليمة':'ok','عليها ملاحظة':'warn','مرفوضة':'danger'},
-    list:['arrival','unloadTime','destination','qty','officer'] },
+    list:['arrival','weightEmpty','weightLoaded','_netWeight','unloadTime','destination','qty','officer'] },
 
   { key:'quality', title:'الجودة والفحص', short:'ملاحظات الجودة على القمح', icon:'quality',
     color:{bg:'#E0F0E5',fg:'#2E7D4F'}, addLabel:'ملاحظة جودة',
@@ -882,7 +885,7 @@ const REGS = [
     ], titleField:'desc', statusField:'deputy', statusTone:{'نعم':'ok','لا':'warn'}, statusPrefix:'النائب: ',
     list:['date','time','eventType','hold','action','notifyTime'] },
 
-  { key:'reconcile', title:'المطابقة المستقلة', short:'مطابقة المصدر والوكيل الملاحي', icon:'reconcile',
+  { key:'reconcile', title:'المطابقة المستقلة', short:'مطابقة الأوزان: ترحيل ↔ استقبال', icon:'reconcile',
     color:{bg:'#EAEFF5',fg:'#1E3F5A'}, addLabel:'تسجيل مطابقة',
     fields:[
       {n:'serial',l:'الرقم التسلسلي',t:'text',mono:true},
@@ -890,13 +893,17 @@ const REGS = [
       {n:'hopper',l:'رقم الهوبر',t:'text',mono:true},
       {n:'hold',l:'رقم الخن',t:'text',mono:true},
       {n:'loadTime',l:'وقت التحميل',t:'time'},
-      {n:'exporterData',l:'بيانات المصدر',t:'text'},
-      {n:'agentData',l:'بيانات الوكيل الملاحي',t:'text'},
+      {n:'dispatchEmpty',l:'وزن فارغ — ترحيل (كغ)',t:'number',mono:true},
+      {n:'dispatchLoaded',l:'وزن محمّل — ترحيل (كغ)',t:'number',mono:true},
+      {n:'receptionEmpty',l:'وزن فارغ — استقبال (كغ)',t:'number',mono:true},
+      {n:'receptionLoaded',l:'وزن محمّل — استقبال (كغ)',t:'number',mono:true},
+      {n:'exporterData',l:'بيانات المصدر / الترحيل',t:'text'},
+      {n:'agentData',l:'بيانات الوكيل / الاستقبال',t:'text'},
       {n:'result',l:'النتيجة',t:'select',req:true,o:['مطابق','اختلاف']},
       {n:'action',l:'الإجراء المتخذ',t:'textarea'},
       {n:'notes',l:'ملاحظات',t:'text'}
     ], titleField:'truck', titlePrefix:'شاحنة', statusField:'result', statusTone:{'مطابق':'ok','اختلاف':'danger'},
-    list:['serial','loadTime','exporterData','agentData','action'] },
+    list:['serial','_dispatchNet','_receptionNet','_weightDiff','result','action'] },
 
   { key:'stoppages', title:'التوقفات والأعطال', short:'التوقفات ونقص الشاحنات', icon:'stop',
     color:{bg:'#F6E7DC',fg:'#A8430F'}, addLabel:'تسجيل توقف',
@@ -955,7 +962,7 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.7.3';
+const APP_VERSION='1.7.4';
 const WORKFLOW_KEYS=['checklist','export','dispatch','reception'];
 const CHAIN_STAGES=[
   {key:'checklist',label:'مرحلة الفحص',icon:'checklist',required:true},
@@ -1135,8 +1142,14 @@ function chainSummaryLine(rec,r){
   const t=normTruck(rec.truck);
   if(!t) return '';
   if(r.key==='export' && rec.serial) return 'تسلسل '+rec.serial+' · '+esc(rec.destination||'');
-  if(r.key==='dispatch' && rec.orderNo) return 'أمر '+rec.orderNo;
-  if(r.key==='reception' && rec.status) return esc(rec.status);
+  if(r.key==='dispatch' && rec.orderNo){
+    const n=truckNetWeight(rec);
+    return 'أمر '+rec.orderNo+(n!=null?' · صافي '+n.toLocaleString('ar-SA')+' كغ':'');
+  }
+  if(r.key==='reception'){
+    const n=truckNetWeight(rec);
+    return (rec.status?esc(rec.status):'')+(n!=null?' · صافي '+n.toLocaleString('ar-SA')+' كغ':'');
+  }
   if(r.key==='checklist' && rec.items) return (rec.items.filter(x=>x.ok).length)+'/'+rec.items.length+' بنود';
   if(r.key==='quality' && rec.obsType) return esc(rec.obsType);
   return rec._t?('س '+rec._t):'';
@@ -1160,11 +1173,42 @@ function durationMin(s,e){
   const [sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
   let d=(eh*60+em)-(sh*60+sm); if(d<0)d+=24*60; return d;
 }
+function parseKg(v){
+  const n=Number(String(v==null?'':v).replace(/,/g,'').trim());
+  return isNaN(n)?null:n;
+}
+function calcNet(empty, loaded){
+  const e=parseKg(empty), l=parseKg(loaded);
+  if(e==null || l==null) return null;
+  return l-e;
+}
+function truckNetWeight(rec){
+  if(!rec) return null;
+  if(rec._netWeight!=null && rec._netWeight!=='') return parseKg(rec._netWeight);
+  const n=calcNet(rec.weightEmpty, rec.weightLoaded);
+  if(n!=null) return n;
+  return parseKg(rec.weight);
+}
 function valDisplay(r,rec,name){
   if(name==='_duration'){ const d=durationMin(rec.startTime,rec.endTime); return d==null?'':d+' دقيقة'; }
+  if(name==='_netWeight'){ const n=truckNetWeight(rec); return n==null?'':n.toLocaleString('ar-SA')+' كغ'; }
+  if(name==='_dispatchNet'){ const n=calcNet(rec.dispatchEmpty,rec.dispatchLoaded); return n==null?'':n.toLocaleString('ar-SA')+' كغ'; }
+  if(name==='_receptionNet'){ const n=calcNet(rec.receptionEmpty,rec.receptionLoaded); return n==null?'':n.toLocaleString('ar-SA')+' كغ'; }
+  if(name==='_weightDiff'){
+    const dn=calcNet(rec.dispatchEmpty,rec.dispatchLoaded), rn=calcNet(rec.receptionEmpty,rec.receptionLoaded);
+    if(dn==null||rn==null) return rec.weightDiff?rec.weightDiff+' كغ':'';
+    return Math.abs(dn-rn).toLocaleString('ar-SA')+' كغ';
+  }
   return rec[name];
 }
-function labelFor(r,name){ if(name==='_duration')return 'مدة التوقف'; const f=fieldByName(r,name); return f?f.l:name; }
+function labelFor(r,name){
+  if(name==='_duration')return 'مدة التوقف';
+  if(name==='_netWeight')return 'الوزن الصافي';
+  if(name==='_dispatchNet')return 'صافي الترحيل';
+  if(name==='_receptionNet')return 'صافي الاستقبال';
+  if(name==='_weightDiff')return 'فرق الصافي';
+  const f=fieldByName(r,name); return f?f.l:name;
+}
 
 function toast(msg){
   const t=$('#toast'); t.innerHTML=svg('quality',16)+'<span>'+esc(msg)+'</span>'; t.classList.add('on');
@@ -1513,6 +1557,16 @@ function openForm(r){
     if(f.n==='officer' && DB.meta.operator) el.value=DB.meta.operator;
   });
   if(r.autoSerial){ const el=$('#f_serial'); if(el){ const mx=DB.reg[r.key].reduce((a,x)=>Math.max(a, Number(x.serial)||0),0); el.value=mx+1; } }
+  if(r.key==='reconcile'){
+    $('#sheetBody').insertAdjacentHTML('beforeend','<div id="reconCalc" class="hint" style="margin-top:10px;padding:10px;border:1px dashed var(--line2);border-radius:10px;line-height:1.8"></div>');
+    const bind=()=>{ prefillReconcileFromChain($('#f_truck')&&$('#f_truck').value); updateReconcilePanel(); };
+    const tEl=$('#f_truck'); if(tEl){ tEl.addEventListener('change',bind); tEl.addEventListener('blur',bind); }
+    ['dispatchEmpty','dispatchLoaded','receptionEmpty','receptionLoaded'].forEach(n=>{
+      const el=$('#f_'+n); if(el){ el.addEventListener('input',updateReconcilePanel); }
+    });
+    const resEl=$('#f_result'); if(resEl) resEl.addEventListener('change',()=>{ resEl.dataset.userSet='1'; });
+    bind();
+  }
   smartFormAssist(r);
   bindScanButtons($('#sheetBody'));
   $('#frmCancel').onclick=closeSheet;
@@ -1560,11 +1614,54 @@ function smartFormAssist(r){
       ['driver','destination','hopper','hold','mobile'].forEach(f=>{
         const el=$('#f_'+f); if(el && !el.value && p[f]){ el.value=p[f]; filled++; }
       });
+      if(r.key==='reception'){
+        const disp=latestByTruck('dispatch',tEl.value);
+        if(disp){
+          ['weightEmpty','weightLoaded'].forEach(f=>{
+            const el=$('#f_'+f);
+            if(el && !el.value && disp[f]){ el.value=disp[f]; filled++; }
+            else if(el && !el.value && f==='weightLoaded' && disp.weight) el.value=disp.weight;
+          });
+        }
+      }
       if(filled) toast('عُبّئت بيانات الشاحنة تلقائياً من سجل سابق');
     };
     tEl.addEventListener('change', apply);
     tEl.addEventListener('blur', apply);
   }
+}
+function prefillReconcileFromChain(truck){
+  truck=normTruck(truck); if(!truck) return;
+  const ex=latestByTruck('export',truck), dis=latestByTruck('dispatch',truck), rec=latestByTruck('reception',truck);
+  const set=(id,v)=>{ const el=$(id); if(el && v!=null && v!=='') el.value=v; };
+  if(ex){ set('#f_serial',ex.serial); set('#f_hopper',ex.hopper); set('#f_hold',ex.hold); set('#f_loadTime',ex.loadTime); }
+  if(dis){
+    set('#f_dispatchEmpty',dis.weightEmpty);
+    set('#f_dispatchLoaded',dis.weightLoaded||dis.weight);
+  }
+  if(rec){
+    set('#f_receptionEmpty',rec.weightEmpty);
+    set('#f_receptionLoaded',rec.weightLoaded);
+  }
+  updateReconcilePanel();
+}
+function updateReconcilePanel(){
+  const el=$('#reconCalc'); if(!el) return;
+  const de=$('#f_dispatchEmpty')&&$('#f_dispatchEmpty').value, dl=$('#f_dispatchLoaded')&&$('#f_dispatchLoaded').value;
+  const re=$('#f_receptionEmpty')&&$('#f_receptionEmpty').value, rl=$('#f_receptionLoaded')&&$('#f_receptionLoaded').value;
+  const dNet=calcNet(de,dl), rNet=calcNet(re,rl);
+  let html='<b>ملخص المطابقة التلقائي</b><br>';
+  html+='صافي الترحيل: <b>'+(dNet==null?'—':dNet.toLocaleString('ar-SA')+' كغ')+'</b><br>';
+  html+='صافي الاستقبال: <b>'+(rNet==null?'—':rNet.toLocaleString('ar-SA')+' كغ')+'</b><br>';
+  if(dNet!=null && rNet!=null){
+    const diff=Math.abs(dNet-rNet);
+    html+='فرق الصافي: <b style="color:'+(diff===0?'var(--ok)':'var(--danger)')+'">'+diff.toLocaleString('ar-SA')+' كغ</b>';
+    html+= diff===0?' → <span style="color:var(--ok)">مطابق</span>':' → <span style="color:var(--danger)">اختلاف</span>';
+    const resEl=$('#f_result'); if(resEl && !resEl.dataset.userSet) resEl.value=diff===0?'مطابق':'اختلاف';
+    const exEl=$('#f_exporterData'); if(exEl && !exEl.value) exEl.value='وزن صافي ترحيل: '+dNet+' كغ (فارغ '+de+' · محمّل '+dl+')';
+    const agEl=$('#f_agentData'); if(agEl && !agEl.value) agEl.value='وزن صافي استقبال: '+rNet+' كغ (فارغ '+re+' · محمّل '+rl+')';
+  }
+  el.innerHTML=html;
 }
 function saveForm(r){
   const rec={};
@@ -1597,6 +1694,10 @@ function saveForm(r){
       if(!govGate('لا يوجد تصدير مسجّل للشاحنة '+(t||'—')+'.\nلا ترحيل بدون تصدير وتسجيل.')){ toast('سجّل التصدير أولاً'); return; }
       mark('ترحيل بدون تصدير'); logException('ترحيل الشاحنة '+t+' بدون تصدير مسبق','سلسلة الشاحنة');
     }
+    const net=calcNet(rec.weightEmpty,rec.weightLoaded);
+    if(net==null){ toast('أدخل الوزن الفارغ والوزن المحمّل'); return; }
+    if(net<=0){ toast('الوزن المحمّل يجب أن يكون أكبر من الوزن الفارغ'); return; }
+    rec._netWeight=net;
   }
   if(r.key==='reception'){
     const t=(rec.truck||'').trim();
@@ -1605,6 +1706,30 @@ function saveForm(r){
       if(!govGate('لا يوجد أمر ترحيل للشاحنة '+(t||'—')+'.\nلا استقبال بدون أمر ترحيل.')){ toast('سجّل أمر الترحيل أولاً'); return; }
       mark('استقبال بدون ترحيل'); logException('استقبال الشاحنة '+t+' بدون أمر ترحيل','سلسلة الشاحنة');
     }
+    const net=calcNet(rec.weightEmpty,rec.weightLoaded);
+    if(net==null){ toast('أدخل الوزن الفارغ والوزن المحمّل'); return; }
+    if(net<=0){ toast('الوزن المحمّل يجب أن يكون أكبر من الوزن الفارغ'); return; }
+    rec._netWeight=net;
+    if(!rec.qty) rec.qty=String(net);
+    const disp=latestByTruck('dispatch',t);
+    const dNet=disp?truckNetWeight(disp):null;
+    if(dNet!=null && Math.abs(net-dNet)>0){
+      if(!govGate('فرق الوزن الصافي بين الترحيل ('+dNet+' كغ) والاستقبال ('+net+' كغ) = '+Math.abs(net-dNet)+' كغ.\nهل تُوثَّق المتابعة؟')){ toast('صحّح الأوزان أو وثّق التجاوز'); return; }
+      mark('فرق وزن '+Math.abs(net-dNet)+' كغ'); logException('استقبال الشاحنة '+t+' بفرق وزن عن الترحيل','مطابقة الأوزان');
+    }
+  }
+  if(r.key==='reconcile'){
+    const dNet=calcNet(rec.dispatchEmpty,rec.dispatchLoaded);
+    const rNet=calcNet(rec.receptionEmpty,rec.receptionLoaded);
+    if(dNet==null || rNet==null){ toast('أكمل أوزان الترحيل والاستقبال للمطابقة'); return; }
+    rec._dispatchNet=dNet; rec._receptionNet=rNet;
+    rec.weightDiff=Math.abs(dNet-rNet);
+    if(rec.result==='مطابق' && rec.weightDiff>0){
+      if(!govGate('النتيجة «مطابق» لكن فرق الصافي '+rec.weightDiff+' كغ.\nتأكيد المطابقة؟')){ toast('غيّر النتيجة إلى اختلاف أو صحّح الأوزان'); return; }
+    }
+    if(!rec.exporterData) rec.exporterData='صافي ترحيل: '+dNet+' كغ';
+    if(!rec.agentData) rec.agentData='صافي استقبال: '+rNet+' كغ';
+    if(!rec.action && rec.weightDiff>0) rec.action='معالجة فرق وزن '+rec.weightDiff+' كغ';
   }
   if(r.key==='finance'){
     const empCats=['راتب/أجر موظف ميناء','بدل وردية موظف','مكافأة موظف ميناء'];
@@ -1822,7 +1947,9 @@ function qrPayload(r,rec){
     if(rec.orderNo)L.push('أمر: '+rec.orderNo);
     if(rec.truck)L.push('شاحنة: '+rec.truck);
     if(rec.destination)L.push('وجهة: '+rec.destination);
-    if(rec.weight)L.push('كمية: '+rec.weight);
+    if(rec.weightEmpty||rec.weightLoaded)L.push('وزن: فارغ '+rec.weightEmpty+' · محمّل '+rec.weightLoaded);
+    else if(rec.weight)L.push('كمية: '+rec.weight);
+    const dn=truckNetWeight(rec); if(dn!=null)L.push('صافي: '+dn+' كغ');
     if(rec.exitTime)L.push('خروج: '+rec.exitTime);
     if(rec.hopper||rec.hold)L.push('هوبر: '+(rec.hopper||'-')+' | خن: '+(rec.hold||'-'));
     if(rec.officer)L.push('مسؤول: '+rec.officer);
@@ -1977,6 +2104,12 @@ const GOV = [
     ['زر «سلسلة الشاحنة» يعرض كل السجلات المرتبطة في خط زمني واحد.','on'],
     ['لا يُقبل تخطي مرحلة إلزامية إلا بتجاوز موثّق في سجل الحقائق.','on'],
     ['المخالفات والمطابقة تُربَط بنفس رقم الشاحنة للتدقيق اللاحق.','on']
+  ]},
+  { t:'مطابقة الأوزان (فارغ / محمّل)', rules:[
+    ['يُسجَّل عند الترحيل: الوزن فارغ والوزن محمّل (كغ) ويُحسب الصافي تلقائياً.','on'],
+    ['يُسجَّل عند الاستقبال: الوزن فارغ والوزن محمّل (كغ) ويُقارَن بصافي الترحيل.','on'],
+    ['المطابقة المستقلة تجلب الأوزان من السلسلة وتُظهر فرق الصافي.','on'],
+    ['أي فرق وزن بين الترحيل والاستقبال يتطلب توثيقاً أو تجاوزاً معتمداً.','on']
   ]}
 ];
 function openTruckChain(truck){
@@ -2000,7 +2133,18 @@ function openTruckChain(truck){
     extra+=chain.violations.slice(0,3).map(v=>`<div class="rline"><span class="k">${esc(v.vioType||'مخالفة')}</span><span class="v">${esc(v.date||v._d||'')}</span></div>`).join('');
   }
   if(chain.reconcile){
-    extra+=`<div class="rline" style="margin-top:8px"><span class="k">مطابقة مستقلة</span><span class="v">${esc(chain.reconcile.result||'—')}</span></div>`;
+    const rc=chain.reconcile;
+    extra+=`<div class="rline" style="margin-top:8px"><span class="k">مطابقة</span><span class="v">${esc(rc.result||'—')}</span></div>`;
+    if(rc._dispatchNet!=null||rc._receptionNet!=null){
+      extra+=`<div class="rline"><span class="k">صافي ترحيل / استقبال</span><span class="v">${esc(rc._dispatchNet||'—')} / ${esc(rc._receptionNet||'—')} كغ</span></div>`;
+    }
+  }
+  const dis=chain.dispatch, recp=chain.reception;
+  if(dis && truckNetWeight(dis)!=null){
+    extra+=`<div class="rline"><span class="k">وزن الترحيل</span><span class="v">فارغ ${esc(dis.weightEmpty||'—')} · محمّل ${esc(dis.weightLoaded||dis.weight||'—')} · صافي ${truckNetWeight(dis)} كغ</span></div>`;
+  }
+  if(recp && truckNetWeight(recp)!=null){
+    extra+=`<div class="rline"><span class="k">وزن الاستقبال</span><span class="v">فارغ ${esc(recp.weightEmpty||'—')} · محمّل ${esc(recp.weightLoaded||'—')} · صافي ${truckNetWeight(recp)} كغ</span></div>`;
   }
   $('#sheetBody').innerHTML=`<div style="margin-bottom:12px">
     <div style="font-family:'Reem Kufi';font-size:17px;font-weight:600">سلسلة الشاحنة <span class="mono">${esc(truck)}</span></div>
