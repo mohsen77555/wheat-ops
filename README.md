@@ -27,10 +27,24 @@ scripts/gen-icons.mjs Rasterizes resources/*.svg into PNG icons
 ## Install directly on your phone (ready-made APK)
 
 A ready-to-install debug APK is published in this repo:
-[`dist/wheat-ops-1.3.0.apk`](dist/wheat-ops-1.3.0.apk).
+[`dist/wheat-ops-1.4.0.apk`](dist/wheat-ops-1.4.0.apk).
 
 **First login:** username `admin`, password `admin` — then change it / add your team
 from Settings → "إدارة المستخدمين والصلاحيات".
+
+### Optional: real-time sync across devices
+
+The app is fully usable offline on a single device. To make edits on one phone
+appear on the others in real time, enable Cloud Sync (Settings → "المزامنة بين الأجهزة"):
+
+1. Create a free Firebase project, then add a **Realtime Database** (start in test mode).
+2. Copy the database URL (e.g. `https://xxxx-default-rtdb.firebaseio.com`).
+3. On every device, paste the **same URL** and the **same team code**, then enable sync.
+   (Use the "QR للمشاركة" button to copy the URL + team code to the other devices.)
+
+Records are append-only and merged by id, so concurrent edits never lose data.
+Sync needs internet; offline changes are merged once back online. For production,
+tighten the Realtime Database security rules (e.g. require auth) instead of test mode.
 
 On the phone:
 
