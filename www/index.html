@@ -303,6 +303,17 @@
   .qrerr{font-size:12px;color:var(--danger);text-align:center;padding:10px;line-height:1.6;}
   .qrtext{white-space:pre-wrap;font-size:12.5px;color:var(--ink2);background:var(--paper);border:1px dashed var(--line2);border-radius:11px;padding:11px 13px;width:100%;text-align:right;line-height:1.8;font-family:'IBM Plex Sans Arabic';}
 
+  /* ---- Smart alerts ---- */
+  .alerts{display:flex;flex-direction:column;gap:8px;}
+  .alert{display:flex;align-items:center;gap:9px;width:100%;text-align:right;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);font-size:12.8px;font-weight:600;color:var(--ink);animation:rise .4s cubic-bezier(.2,.7,.3,1) backwards;}
+  .alert svg{flex:0 0 auto;width:17px;height:17px;}
+  .alert .ago{margin-inline-start:auto;font-size:11px;color:var(--ink3);font-weight:600;white-space:nowrap;}
+  .alert.a-warn{border-color:var(--warn);} .alert.a-warn svg{color:var(--warn);}
+  .alert.a-danger{border-color:var(--danger);} .alert.a-danger svg{color:var(--danger);}
+  .alert:active{transform:scale(.99);}
+  .alert-ok{display:flex;align-items:center;gap:8px;padding:11px 13px;border-radius:12px;background:var(--ok-bg);color:var(--ok);font-size:12.8px;font-weight:600;}
+  .alert-ok svg{width:17px;height:17px;}
+
   @media print{
     .topbar,.rv-tools,.sh-foot,.footnote,#printBtn,.iconbtn,.rv-head .back,.report button{display:none!important;}
     body{background:#fff;} .report{border:none;box-shadow:none;margin:0 0 12px;}
@@ -329,6 +340,9 @@
     <div class="wrap">
       <div class="sec-h"><h2>المؤشرات اللحظية</h2><span class="hint">الوردية الحالية</span></div>
       <div class="kpis" id="kpis"></div>
+
+      <div class="sec-h" id="alertsHead"><h2>تنبيهات ذكية</h2><span class="hint">إجراءات مقترحة</span></div>
+      <div class="alerts" id="alerts"></div>
 
       <div class="sec-h"><h2>السجلات والنماذج</h2><span class="hint">١٢ سجلاً</span></div>
       <div class="tiles" id="tiles"></div>
@@ -809,7 +823,7 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.5.0';
+const APP_VERSION='1.6.0';
 
 /* ============ State ============ */
 const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null };
@@ -964,7 +978,38 @@ function renderTiles(){
   });
 }
 
-function renderHome(){ renderMeta(); renderKpis(); renderTiles(); }
+/* ============ Smart alerts (actionable insights) ============ */
+function computeAlerts(){
+  const A=[], norm=v=>String(v||'').trim();
+  const exp=DB.reg.export||[], dis=DB.reg.dispatch||[], rec=DB.reg.reception||[];
+  const setDis=new Set(dis.map(x=>norm(x.truck)).filter(Boolean));
+  const setRec=new Set(rec.map(x=>norm(x.truck)).filter(Boolean));
+  const setChk=new Set((DB.reg.checklist||[]).map(x=>norm(x.truck)).filter(Boolean));
+  const loadedNoDispatch = exp.filter(x=>{const t=norm(x.truck);return t&&!setDis.has(t);}).length;
+  const dispatchedNoReception = dis.filter(x=>{const t=norm(x.truck);return t&&!setRec.has(t);}).length;
+  const exportedNoCheck = exp.filter(x=>{const t=norm(x.truck);return t&&!setChk.has(t);}).length;
+  const diffs=(DB.reg.reconcile||[]).filter(x=>x.result==='اختلاف').length;
+  const vioNoDeputy=(DB.reg.violations||[]).filter(x=>norm(x.deputy)!=='نعم').length;
+  const pendFin=(DB.reg.finance||[]).filter(x=>x.approval==='معلق').length;
+  const openStops=(DB.reg.stoppages||[]).filter(x=>norm(x.startTime)&&!norm(x.endTime)).length;
+  if(diffs) A.push({t:diffs+' اختلاف مطابقة بحاجة معالجة', tone:'danger', go:'reconcile'});
+  if(vioNoDeputy) A.push({t:vioNoDeputy+' مخالفة دون إبلاغ نائب الرئيس', tone:'danger', go:'violations'});
+  if(openStops) A.push({t:openStops+' توقف مفتوح (بلا وقت عودة)', tone:'warn', go:'stoppages'});
+  if(loadedNoDispatch) A.push({t:loadedNoDispatch+' شاحنة محمّلة بلا ترحيل', tone:'warn', go:'dispatch'});
+  if(dispatchedNoReception) A.push({t:dispatchedNoReception+' شاحنة مرحّلة بلا استقبال', tone:'warn', go:'reception'});
+  if(exportedNoCheck) A.push({t:exportedNoCheck+' شاحنة صُدّرت بلا فحص جودة', tone:'warn', go:'checklist'});
+  if(pendFin) A.push({t:pendFin+' سجل مالي معلّق', tone:'warn', go:'finance'});
+  return A;
+}
+function renderAlerts(){
+  const el=$('#alerts'); if(!el) return;
+  const A=computeAlerts();
+  if(!A.length){ el.innerHTML=`<div class="alert-ok">${svg('quality',16)}<span>كل شيء منضبط — لا تنبيهات حالياً.</span></div>`; return; }
+  el.innerHTML=A.map((a,i)=>`<button class="alert a-${a.tone}" data-go="${a.go}" style="animation-delay:${i*40}ms">${svg('incident',16)}<span>${esc(a.t)}</span><span class="ago">عرض ›</span></button>`).join('');
+  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>openRegister(b.dataset.go));
+}
+
+function renderHome(){ renderMeta(); renderKpis(); renderAlerts(); renderTiles(); }
 
 /* Re-render visible UI after a remote sync update */
 function refreshUI(){
@@ -1116,9 +1161,57 @@ function openForm(r){
     if(f.n==='officer' && DB.meta.operator) el.value=DB.meta.operator;
   });
   if(r.autoSerial){ const el=$('#f_serial'); if(el){ const mx=DB.reg[r.key].reduce((a,x)=>Math.max(a, Number(x.serial)||0),0); el.value=mx+1; } }
+  smartFormAssist(r);
   $('#frmCancel').onclick=closeSheet;
   $('#frmSave').onclick=()=>saveForm(r);
   openSheet(r.addLabel||'إضافة سجل');
+}
+
+/* ============ Smart form assist (autocomplete + auto-fill from history) ============ */
+const AUTOFILL_FIELDS=['truck','driver','destination','officer','hopper','hold','mobile','section'];
+function distinctValues(field){
+  const set=new Set();
+  REGS.forEach(r=>{ (DB.reg[r.key]||[]).forEach(rec=>{ const v=rec&&rec[field]; if(v&&String(v).trim()) set.add(String(v).trim()); }); });
+  return Array.from(set).slice(0,300);
+}
+function truckProfile(truck){
+  truck=(truck||'').trim(); if(!truck) return null;
+  const profile={}; const pick=['driver','destination','hopper','hold','mobile'];
+  // take the most recent non-empty value per field across all registers
+  let bestId={};
+  REGS.forEach(r=>{ (DB.reg[r.key]||[]).forEach(rec=>{
+    if(String(rec.truck||'').trim()!==truck) return;
+    const id=Number(rec._id)||0;
+    pick.forEach(f=>{ if(rec[f]&&String(rec[f]).trim() && id>=(bestId[f]||0)){ profile[f]=String(rec[f]).trim(); bestId[f]=id; } });
+  }); });
+  return Object.keys(profile).length? profile : null;
+}
+function smartFormAssist(r){
+  const body=$('#sheetBody');
+  (r.fields||[]).forEach(f=>{
+    if((f.t==='text'||f.t==='tel') && AUTOFILL_FIELDS.includes(f.n)){
+      const el=$('#f_'+f.n); if(!el) return;
+      const vals=distinctValues(f.n); if(!vals.length) return;
+      const dlid='dl_'+f.n; el.setAttribute('list',dlid); el.setAttribute('autocomplete','off');
+      const dl=document.createElement('datalist'); dl.id=dlid;
+      dl.innerHTML=vals.map(v=>`<option value="${esc(v)}"></option>`).join('');
+      body.appendChild(dl);
+    }
+  });
+  // typing a known truck number auto-fills its known data (skip on export — it originates it)
+  const tEl=$('#f_truck');
+  if(tEl && r.key!=='export'){
+    const apply=()=>{
+      const p=truckProfile(tEl.value); if(!p) return;
+      let filled=0;
+      ['driver','destination','hopper','hold','mobile'].forEach(f=>{
+        const el=$('#f_'+f); if(el && !el.value && p[f]){ el.value=p[f]; filled++; }
+      });
+      if(filled) toast('عُبّئت بيانات الشاحنة تلقائياً من سجل سابق');
+    };
+    tEl.addEventListener('change', apply);
+    tEl.addEventListener('blur', apply);
+  }
 }
 function saveForm(r){
   const rec={};
@@ -1198,12 +1291,13 @@ function openChecklistForm(){
 function openSettings(){
   const m=DB.meta;
   const cu=currentUser();
-  $('#sheetBody').innerHTML=`
-    <div class="setgrp"><div class="gh">الحساب والمستخدمون</div><div style="padding:12px 14px 14px">
+  const accountGroup = `
+    <div class="setgrp"><div class="gh">الحساب</div><div style="padding:12px 14px 14px">
       <div class="hint" style="margin-bottom:10px">${cu?('المستخدم الحالي: <b style="color:var(--ink)">'+esc(cu.name||cu.username)+'</b> · الدور: '+esc(cu.role||'—')):'لم يتم تسجيل الدخول'}</div>
       ${isAdmin()?'<button class="btn btn-ghost" id="s_users" style="width:100%;margin-bottom:9px;justify-content:center">إدارة المستخدمين والصلاحيات</button>':''}
       <button class="btn btn-ghost" id="s_logout" style="width:100%;justify-content:center">تسجيل الخروج</button>
-    </div></div>
+    </div></div>`;
+  const adminGroups = `
     <div class="setgrp"><div class="gh">بيانات العملية</div><div style="padding:12px 14px 2px">
       <div class="field"><label>اسم الباخرة</label><input id="s_ship" value="${esc(m.ship)}"></div>
       <div class="field"><label>موقع التفريغ</label><input id="s_port" value="${esc(m.port)}"></div>
@@ -1252,8 +1346,15 @@ function openSettings(){
       <div class="field"><label>اعتماد الإصدار (الاسم)</label><input id="s_appr" value="${esc(m.approvedBy)}" placeholder="يُعتمد من رئيس الفريق / نائبه"></div>
       <div class="hint">إصدار البرنامج: ${APP_VERSION} · آخر تحميل: ${esc(todayDate())}</div>
     </div></div>`;
-  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="setCancel" style="flex:.6">إغلاق</button><button class="btn btn-pri" id="setSave">حفظ</button>`;
+  const adminOnly = isAdmin();
+  $('#sheetBody').innerHTML = accountGroup + (adminOnly ? adminGroups :
+    `<div class="setgrp"><div class="gh">معلومات</div><div style="padding:12px 14px 14px"><div class="hint">الضبط والصلاحيات والمزامنة متاحة للمشرفين فقط.<br>إصدار البرنامج: ${APP_VERSION}</div></div></div>`);
+  $('#sheetFoot').innerHTML = adminOnly
+    ? `<button class="btn btn-ghost" id="setCancel" style="flex:.6">إغلاق</button><button class="btn btn-pri" id="setSave">حفظ</button>`
+    : `<button class="btn btn-ghost" id="setCancel" style="width:100%;justify-content:center">إغلاق</button>`;
   $('#setCancel').onclick=closeSheet;
+  $('#s_logout').onclick=doLogout;
+  if(adminOnly){
   $('#setSave').onclick=()=>{
     DB.meta.ship=$('#s_ship').value.trim()||'—'; DB.meta.port=$('#s_port').value.trim()||'—';
     DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value;
@@ -1266,7 +1367,6 @@ function openSettings(){
     saveMeta(); closeSheet(); renderHome(); toast(Sync.active()?'تم الحفظ — المزامنة مفعّلة':'تم حفظ الإعدادات');
   };
   const su=$('#s_users'); if(su) su.onclick=openUsers;
-  $('#s_logout').onclick=doLogout;
   $('#sy_test').onclick=async()=>{
     const cfg={ url:$('#sy_url').value.trim(), team:$('#sy_team').value.trim(),
       apiKey:$('#sy_key').value.trim(), email:$('#sy_email').value.trim(), password:$('#sy_pass').value };
@@ -1298,6 +1398,7 @@ function openSettings(){
     for(const r of REGS){ DB.reg[r.key]=[]; await saveReg(r.key); }
     closeSheet(); renderHome(); toast('تم تصفير البيانات');
   };
+  } /* end adminOnly */
   openSheet('الإعدادات');
 }
 $('#openSettings').onclick=openSettings;
