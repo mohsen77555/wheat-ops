@@ -418,16 +418,34 @@ const I = {
 const svg = (n,w=20)=>`<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${I[n]||I.doc}</svg>`;
 
 /* ============ Storage ============ */
+/* Durable persistence. On a real device the old `window.storage` API does NOT
+   exist, so without this the app kept data only in memory and lost everything
+   on restart (always showing "no records"). localStorage persists across app
+   restarts in the Android WebView and in the browser/PWA. `window.storage` is
+   kept as a legacy fallback; `mem` is a last resort if storage is unavailable. */
 const Store = {
   mem:{},
-  has(){ try{ return !!window.storage; }catch(e){ return false; } },
+  PREFIX:'wheatops:',
+  hasExt(){ try{ return !!window.storage; }catch(e){ return false; } },
+  hasLS(){ try{ return typeof localStorage!=='undefined' && localStorage!==null; }catch(e){ return false; } },
   async get(key){
-    if(this.has()){ try{ const r = await window.storage.get(key,false); return r? JSON.parse(r.value):null; }catch(e){ return null; } }
-    return (key in this.mem)? this.mem[key]:null;
+    if(this.hasLS()){
+      try{
+        var v = localStorage.getItem(this.PREFIX+key);
+        if(v===null) v = localStorage.getItem(key);   /* migrate older un-prefixed keys */
+        if(v!==null) return JSON.parse(v);
+      }catch(e){}
+    }
+    if(this.hasExt()){
+      try{ const r = await window.storage.get(key,false); if(r) return JSON.parse(r.value); }catch(e){}
+    }
+    return (key in this.mem)? this.mem[key] : null;
   },
   async set(key,val){
     this.mem[key]=val;
-    if(this.has()){ try{ await window.storage.set(key, JSON.stringify(val), false); }catch(e){} }
+    const json = JSON.stringify(val);
+    if(this.hasLS()){ try{ localStorage.setItem(this.PREFIX+key, json); }catch(e){} }
+    if(this.hasExt()){ try{ await window.storage.set(key, json, false); }catch(e){} }
   }
 };
 
@@ -594,7 +612,7 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.2';
+const APP_VERSION='1.2.2';
 
 /* ============ State ============ */
 const DB = { meta:{}, reg:{}, handovers:[] };
