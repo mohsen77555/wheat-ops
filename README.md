@@ -1,2 +1,2 @@
-# wheat-ops1.6.0
+# wheat-ops
 Wheat unloading Management app 
