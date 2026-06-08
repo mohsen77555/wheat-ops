@@ -314,6 +314,37 @@
   .alert-ok{display:flex;align-items:center;gap:8px;padding:11px 13px;border-radius:12px;background:var(--ok-bg);color:var(--ok);font-size:12.8px;font-weight:600;}
   .alert-ok svg{width:17px;height:17px;}
 
+  /* ---- Workflow pipeline ---- */
+  .workflow{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch;}
+  .wf-step{flex:1;min-width:72px;text-align:center;padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:var(--card);cursor:pointer;transition:.15s;}
+  .wf-step .n{font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:3px;}
+  .wf-step .l{font-size:11px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .wf-step .c{font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-top:4px;}
+  .wf-step.done{border-color:var(--ok);background:var(--ok-bg);}
+  .wf-step.done .c{color:var(--ok);}
+  .wf-step.warn{border-color:var(--warn);background:var(--warn-bg);}
+  .wf-step.warn .c{color:var(--warn);}
+  .wf-step:active{transform:scale(.97);}
+
+  /* ---- Barcode scanner ---- */
+  .scanrow{display:flex;gap:8px;align-items:stretch;}
+  .scanrow input,.scanrow select,.scanrow textarea{flex:1;}
+  .btn-scan{flex:0 0 auto;width:44px;border-radius:11px;border:1px solid var(--line2);background:var(--paper);display:grid;place-items:center;color:var(--navy2);}
+  .btn-scan:active{transform:scale(.96);background:var(--wheat-bg);}
+  .scan-overlay{position:fixed;inset:0;z-index:90;background:#0a1520;display:flex;flex-direction:column;}
+  .scan-overlay .bar{padding:calc(12px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;justify-content:space-between;color:#F3ECDD;}
+  .scan-overlay .bar .t{font-family:'Reem Kufi';font-size:16px;font-weight:600;}
+  .scan-overlay video{flex:1;object-fit:cover;width:100%;max-height:55vh;}
+  .scan-overlay .hint{padding:14px;text-align:center;color:#A9C2D4;font-size:12.5px;line-height:1.7;}
+  .scan-overlay .frame{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:min(280px,80vw);height:120px;border:2px solid var(--wheat);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);pointer-events:none;}
+
+  /* ---- Device setup / login extras ---- */
+  .setup-btns{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+  .setup-btn{padding:14px;border-radius:14px;border:1px solid var(--line2);background:var(--card);text-align:right;cursor:pointer;}
+  .setup-btn .t{font-weight:700;font-size:14px;color:var(--ink);}
+  .setup-btn .d{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.5;}
+  .lg-extra{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line2);}
+
   @media print{
     .topbar,.rv-tools,.sh-foot,.footnote,#printBtn,.iconbtn,.rv-head .back,.report button{display:none!important;}
     body{background:#fff;} .report{border:none;box-shadow:none;margin:0 0 12px;}
@@ -340,6 +371,9 @@
     <div class="wrap">
       <div class="sec-h"><h2>المؤشرات اللحظية</h2><span class="hint">الوردية الحالية</span></div>
       <div class="kpis" id="kpis"></div>
+
+      <div class="sec-h"><h2>سلسلة العمليات</h2><span class="hint">فحص ← تصدير ← ترحيل ← استقبال</span></div>
+      <div class="workflow" id="workflow"></div>
 
       <div class="sec-h" id="alertsHead"><h2>تنبيهات ذكية</h2><span class="hint">إجراءات مقترحة</span></div>
       <div class="alerts" id="alerts"></div>
@@ -391,6 +425,24 @@
     <div id="govBody" style="padding:14px;"></div>
   </div>
 
+<div id="deviceSetupGate" class="hidden" style="position:fixed;inset:0;z-index:82;background:linear-gradient(180deg,var(--navy),#0e2030);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;">
+  <div style="width:100%;max-width:380px;background:var(--paper2);border-radius:18px;border-top:3px solid var(--wheat);box-shadow:var(--shadow-lg);padding:22px;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-family:'Reem Kufi';font-size:19px;font-weight:600;color:var(--ink)">إعداد الجهاز</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">اختر نوع هذا الجهاز قبل أول استخدام</div>
+    </div>
+    <div class="setup-btns">
+      <button type="button" class="setup-btn" id="setup_admin">
+        <div class="t">جهاز المشرف / الإدارة</div>
+        <div class="d">لرئيس الفريق والمشرفين — إنشاء المستخدمين وإدارة النظام</div>
+      </button>
+      <button type="button" class="setup-btn" id="setup_operator">
+        <div class="t">جهاز موظف ميداني</div>
+        <div class="d">للتصدير والترحيل والفحص والمالية — يُفعَّل بحساب من المشرف</div>
+      </button>
+    </div>
+  </div>
+</div>
 <div id="loginGate" class="hidden" style="position:fixed;inset:0;z-index:80;background:linear-gradient(180deg,var(--navy),#0e2030);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;">
   <div style="width:100%;max-width:360px;background:var(--paper2);border-radius:18px;border-top:3px solid var(--wheat);box-shadow:var(--shadow-lg);padding:22px;">
     <div style="text-align:center;margin-bottom:16px;">
@@ -402,6 +454,10 @@
     <div id="lg_err" style="color:var(--danger);font-size:12.5px;min-height:18px;margin-bottom:4px"></div>
     <button class="btn btn-pri" id="lg_btn" style="width:100%;justify-content:center">دخول</button>
     <div id="lg_hint" class="hint" style="text-align:center;margin-top:12px"></div>
+    <div id="lg_operator" class="lg-extra hidden">
+      <button class="btn btn-ghost" id="lg_scan_user" style="width:100%;justify-content:center;margin-bottom:8px">مسح QR تفعيل الحساب</button>
+      <div class="hint" style="text-align:center">اطلب من المشرف إنشاء حسابك ثم مسح رمز التفعيل أو أدخل اسم المستخدم وكلمة السر.</div>
+    </div>
   </div>
 </div>
 <div class="subscrim" id="subscrim"></div>
@@ -456,6 +512,7 @@ const I = {
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v3M14 21h3v.01M21 21v-3"/>',
+  scan:'<path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M7 12h10"/>',
   gov:'<path d="M12 3v18M5 21h14M7 7h10M7 7l-3 6a3 3 0 0 0 6 0zM17 7l-3 6a3 3 0 0 0 6 0z"/>',
   lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'
 };
@@ -663,8 +720,8 @@ const Sync = {
 /* ============ Register definitions ============ */
 const SEL_YN = ['نعم','لا'];
 const REGS = [
-  { key:'export', title:'التصدير تحت الباخرة', short:'تحميل وتسجيل الشاحنات', icon:'truck',
-    color:{bg:'#FBEFD2',fg:'#8F5C08'}, addLabel:'تصدير شاحنة', autoSerial:true,
+  { key:'export', title:'التصدير تحت الباخرة', short:'الخطوة ٢ — تحميل وتسجيل الشاحنات', icon:'truck',
+    color:{bg:'#FBEFD2',fg:'#8F5C08'}, addLabel:'تصدير شاحنة', autoSerial:true, workflowStage:2,
     fields:[
       {n:'serial',l:'الرقم التسلسلي',t:'number',req:true,mono:true},
       {n:'truck',l:'رقم الشاحنة',t:'text',req:true,mono:true},
@@ -677,8 +734,8 @@ const REGS = [
       {n:'notes',l:'ملاحظات',t:'textarea'}
     ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['serial','loadTime','hopper','hold','destination','driver','officer'] },
 
-  { key:'dispatch', title:'الترحيل', short:'أوامر الترحيل ومتابعة الخروج', icon:'dispatch',
-    color:{bg:'#E5F0EE',fg:'#155E5A'}, addLabel:'أمر ترحيل',
+  { key:'dispatch', title:'الترحيل', short:'الخطوة ٣ — أوامر الترحيل ومتابعة الخروج', icon:'dispatch',
+    color:{bg:'#E5F0EE',fg:'#155E5A'}, addLabel:'أمر ترحيل', workflowStage:3,
     fields:[
       {n:'orderNo',l:'رقم أمر الترحيل',t:'text',req:true,mono:true},
       {n:'truck',l:'رقم الشاحنة',t:'text',req:true,mono:true},
@@ -693,8 +750,8 @@ const REGS = [
       {n:'notes',l:'ملاحظات',t:'textarea'}
     ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['orderNo','exitTime','destination','weight','hopper','officer'] },
 
-  { key:'reception', title:'الاستقبال', short:'استلام ومطابقة الوصول', icon:'reception',
-    color:{bg:'#EAEFF5',fg:'#1E3F5A'}, addLabel:'تسجيل استقبال',
+  { key:'reception', title:'الاستقبال', short:'الخطوة ٤ — استلام ومطابقة الوصول', icon:'reception',
+    color:{bg:'#EAEFF5',fg:'#1E3F5A'}, addLabel:'تسجيل استقبال', workflowStage:4,
     fields:[
       {n:'truck',l:'رقم الشاحنة',t:'text',req:true,mono:true},
       {n:'driver',l:'اسم السائق',t:'text'},
@@ -725,8 +782,8 @@ const REGS = [
     ], titleField:'obsType', statusField:'photos', statusTone:{'نعم':'ok','لا':'neutral'}, statusPrefix:'صور: ',
     list:['time','truck','hopper','hold','action','officer'] },
 
-  { key:'checklist', title:'قائمة تحقق الجودة', short:'قائمة فحص الشاحنة قبل التحميل', icon:'checklist',
-    color:{bg:'#EAF3EC',fg:'#2E7D4F'}, addLabel:'فحص جديد', isChecklist:true,
+  { key:'checklist', title:'مرحلة الفحص', short:'الخطوة ١ — فحص الشاحنة قبل التحميل', icon:'checklist',
+    color:{bg:'#EAF3EC',fg:'#2E7D4F'}, addLabel:'بدء فحص', isChecklist:true, workflowStage:1,
     items:[
       'صندوق الشاحنة نظيف قبل التحميل',
       'صندوق الشاحنة جاف ولا توجد رطوبة',
@@ -801,20 +858,25 @@ const REGS = [
     ], titleField:'vioType', statusField:'deputy', statusTone:{'نعم':'ok','لا':'danger'}, statusPrefix:'النائب: ',
     list:['date','time','truck','action'] },
 
-  { key:'finance', title:'المالية', short:'المستندات والمطابقة المالية', icon:'finance',
-    color:{bg:'#F4ECDD',fg:'#8F5C08'}, addLabel:'سجل مالي',
+  { key:'finance', title:'المالية', short:'صرف موظفي الميناء ونفقات الميناء', icon:'finance',
+    color:{bg:'#F4ECDD',fg:'#8F5C08'}, addLabel:'سجل صرف',
     fields:[
-      {n:'truck',l:'رقم الشاحنة',t:'text',req:true,mono:true},
-      {n:'exportOrder',l:'أمر التصدير',t:'select',o:SEL_YN},
-      {n:'dispatchOrder',l:'أمر الترحيل',t:'select',o:SEL_YN},
-      {n:'receipt',l:'سند الاستلام',t:'select',o:SEL_YN},
-      {n:'destination',l:'الوجهة',t:'text'},
-      {n:'amount',l:'المبلغ',t:'number',mono:true},
+      {n:'date',l:'التاريخ',t:'date',req:true},
+      {n:'expenseCat',l:'فئة الصرف',t:'select',req:true,o:[
+        'راتب/أجر موظف ميناء','بدل وردية موظف','مكافأة موظف ميناء',
+        'نفقة ميناء تشغيلية','صيانة معدات الميناء','مستلزمات ميدانية',
+        'خدمات خارجية للميناء','أخرى']},
+      {n:'employeeName',l:'اسم الموظف / المستفيد',t:'text'},
+      {n:'employeeId',l:'الرقم الوظيفي',t:'text',mono:true,scan:true},
+      {n:'section',l:'القسم في الميناء',t:'select',o:['التصدير','الترحيل','الاستقبال','الفحص والجودة','المالية','الإدارة','الصيانة','الساحة العامة','أخرى']},
+      {n:'description',l:'بيان الصرف / الغرض',t:'textarea',req:true},
+      {n:'amount',l:'المبلغ (ريال)',t:'number',req:true,mono:true},
+      {n:'paymentMethod',l:'طريقة الصرف',t:'select',o:['نقدي','تحويل بنكي','شيك','بطاقة','أخرى']},
+      {n:'receiptNo',l:'رقم السند / الإيصال',t:'text',mono:true},
       {n:'approval',l:'حالة الاعتماد',t:'select',req:true,o:['معتمد','معلق','مرفوض']},
-      {n:'missing',l:'مستندات ناقصة',t:'text'},
       {n:'notes',l:'ملاحظات',t:'text'}
-    ], titleField:'truck', titlePrefix:'شاحنة', statusField:'approval', statusTone:{'معتمد':'ok','معلق':'warn','مرفوض':'danger'},
-    list:['amount','destination','exportOrder','dispatchOrder','receipt','missing'] }
+    ], titleField:'description', statusField:'approval', statusTone:{'معتمد':'ok','معلق':'warn','مرفوض':'danger'},
+    list:['date','expenseCat','employeeName','section','amount','paymentMethod','receiptNo'] }
 ];
 const REGMAP = {}; REGS.forEach(function(r){ REGMAP[r.key]=r; });
 
@@ -823,10 +885,16 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.6.0';
+const APP_VERSION='1.7.0';
+const WORKFLOW_KEYS=['checklist','export','dispatch','reception'];
+const ROLE_PRIMARY={
+  'مسؤول التصدير':'export','مسؤول الترحيل':'dispatch','مسؤول الاستقبال':'reception',
+  'مسؤول الفحص والجودة':'checklist','المالية':'finance'
+};
+const SCAN_FIELDS=['truck','employeeId','receiptNo','orderNo','serial'];
 
 /* ============ State ============ */
-const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null };
+const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null, deviceSetup:null };
 const DEFAULT_META = { ship:'INCE INEBOLU', port:'الصليف', startDate:'', shift:'الوردية الأولى', operator:'', role:'', hoppers:'', approvedBy:'' };
 
 async function loadAll(){
@@ -838,8 +906,10 @@ async function loadAll(){
   DB.handovers = (await Store.get('handovers')) || [];
   DB.users = (await Store.get('users')) || [];
   DB.sessionUser = await Store.get('session');
+  DB.deviceSetup = await Store.get('deviceSetup');
   await ensureSeedAdmin();
 }
+async function saveDeviceSetup(){ await Store.set('deviceSetup', DB.deviceSetup); }
 async function saveMeta(){ await Store.set('meta', DB.meta); }
 async function saveReg(key){ await Store.set('reg:'+key, DB.reg[key]); }
 async function saveHandovers(){ await Store.set('handovers', DB.handovers); }
@@ -860,12 +930,22 @@ async function hashPass(s){
 async function verifyPass(s,stored){ return (await hashPass(s))===stored; }
 async function ensureSeedAdmin(){
   if(!Array.isArray(DB.users)) DB.users=[];
-  if(DB.users.length===0){
+  const configured=DB.deviceSetup && DB.deviceSetup.configured;
+  const isAdminDevice=DB.deviceSetup && DB.deviceSetup.mode==='admin';
+  if(!configured){
+    if(DB.users.length && !DB.deviceSetup){
+      DB.deviceSetup={mode:'admin',configured:true}; await saveDeviceSetup();
+    }
+    return;
+  }
+  if(DB.users.length===0 && isAdminDevice){
     DB.users.push({ id:Date.now(), name:'المسؤول', username:'admin', role:'رئيس الفريق',
       pass:await hashPass('admin'), active:true, mustChange:true, _t:nowTime(), _d:todayDate(), _by:'النظام' });
     await saveUsers();
   }
 }
+function isOperatorDevice(){ return DB.deviceSetup && DB.deviceSetup.mode==='operator'; }
+function isSupervisorRole(role){ return SUPER.includes(role||''); }
 function findUser(username){
   const u=(username||'').trim().toLowerCase();
   return DB.users.find(x=>(x.username||'').toLowerCase()===u);
@@ -951,18 +1031,21 @@ function renderKpis(){
     {v:c('reception'),l:'شاحنات مستلمة',sub:'في الموقع',a:'#1E3F5A'},
     {v:c('quality'),l:'ملاحظات جودة',sub:'مسجلة',a:'#2E7D4F'},
     {v:c('stoppages'),l:'توقفات',sub:stopMin+' دقيقة إجمالاً',a:'#A8430F'},
-    {v:diffs,l:'اختلافات مطابقة',sub:c('violations')+' مخالفة · '+pendFin+' مالية معلقة',a:'#B23528'}
+    {v:diffs,l:'اختلافات مطابقة',sub:c('violations')+' مخالفة · '+pendFin+' صرف معلّق',a:'#B23528'}
   ];
   $('#kpis').innerHTML = data.map((d,i)=>`<div class="kpi" style="--accent:${d.a};animation-delay:${i*45}ms">
     <div class="v mono">${d.v}</div><div class="l">${d.l}</div><div class="sub">${esc(d.sub)}</div></div>`).join('');
 }
 
 function renderTiles(){
-  const items = REGS.map(r=>({key:r.key,title:r.title,short:r.short,icon:r.icon,color:r.color,
+  const u=currentUser(), opOnly=u && !isSupervisorRole(u.role);
+  const items = REGS.filter(r=>!opOnly || canAccess(r)).map(r=>({key:r.key,title:r.title,short:r.short,icon:r.icon,color:r.color,
     locked:!canAccess(r),
     cnt:(r.isChecklist? (DB.reg[r.key]||[]).length : DB.reg[r.key].length)}));
-  items.push({key:'__handover',title:'تسليم الوردية',short:'ملخص وتقرير الوردية',icon:'handover',color:{bg:'#EAEFF5',fg:'#1E3F5A'},cnt:''});
-  items.push({key:'__gov',title:'حوكمة البرنامج',short:'قواعد الضبط وسلامة البيانات',icon:'gov',color:{bg:'#E8EDF3',fg:'#142C40'},cnt:''});
+  if(!opOnly || isAdmin()){
+    items.push({key:'__handover',title:'تسليم الوردية',short:'ملخص وتقرير الوردية',icon:'handover',color:{bg:'#EAEFF5',fg:'#1E3F5A'},cnt:''});
+    items.push({key:'__gov',title:'حوكمة البرنامج',short:'قواعد الضبط وسلامة البيانات',icon:'gov',color:{bg:'#E8EDF3',fg:'#142C40'},cnt:''});
+  }
   $('#tiles').innerHTML = items.map((t,i)=>`
     <button class="tile" data-tile="${t.key}" style="animation-delay:${i*40}ms${t.locked?';opacity:.62':''}">
       <div class="top">
@@ -998,8 +1081,26 @@ function computeAlerts(){
   if(loadedNoDispatch) A.push({t:loadedNoDispatch+' شاحنة محمّلة بلا ترحيل', tone:'warn', go:'dispatch'});
   if(dispatchedNoReception) A.push({t:dispatchedNoReception+' شاحنة مرحّلة بلا استقبال', tone:'warn', go:'reception'});
   if(exportedNoCheck) A.push({t:exportedNoCheck+' شاحنة صُدّرت بلا فحص جودة', tone:'warn', go:'checklist'});
-  if(pendFin) A.push({t:pendFin+' سجل مالي معلّق', tone:'warn', go:'finance'});
+  if(pendFin) A.push({t:pendFin+' صرف موظف/ميناء معلّق', tone:'warn', go:'finance'});
+  const finTotal=(DB.reg.finance||[]).filter(x=>x.approval==='معتمد').reduce((a,x)=>a+(Number(x.amount)||0),0);
+  if(finTotal>0 && isAdmin()) A.push({t:'إجمالي صرف معتمد: '+finTotal.toLocaleString('ar-SA')+' ريال', tone:'ok', go:'finance'});
   return A;
+}
+function renderWorkflow(){
+  const el=$('#workflow'); if(!el) return;
+  const norm=v=>String(v||'').trim();
+  const exp=DB.reg.export||[], dis=DB.reg.dispatch||[], rec=DB.reg.reception||[], chk=DB.reg.checklist||[];
+  const stages=[
+    {key:'checklist',n:'١',l:'الفحص',cnt:chk.length, warn:exp.some(x=>{const t=norm(x.truck);return t&&!chk.some(c=>norm(c.truck)===t);})},
+    {key:'export',n:'٢',l:'التصدير',cnt:exp.length, warn:exp.some(x=>{const t=norm(x.truck);return t&&!dis.some(d=>norm(d.truck)===t);})},
+    {key:'dispatch',n:'٣',l:'الترحيل',cnt:dis.length, warn:dis.some(x=>{const t=norm(x.truck);return t&&!rec.some(r=>norm(r.truck)===t);})},
+    {key:'reception',n:'٤',l:'الاستقبال',cnt:rec.length, warn:false}
+  ];
+  el.innerHTML=stages.map(s=>{
+    const cls=s.warn?'warn':(s.cnt?'done':'');
+    return `<button type="button" class="wf-step ${cls}" data-wf="${s.key}"><div class="n">مرحلة ${s.n}</div><div class="l">${s.l}</div><div class="c">${s.cnt}</div></button>`;
+  }).join('');
+  el.querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>openRegister(b.dataset.wf));
 }
 function renderAlerts(){
   const el=$('#alerts'); if(!el) return;
@@ -1009,7 +1110,7 @@ function renderAlerts(){
   el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>openRegister(b.dataset.go));
 }
 
-function renderHome(){ renderMeta(); renderKpis(); renderAlerts(); renderTiles(); }
+function renderHome(){ renderMeta(); renderKpis(); renderWorkflow(); renderAlerts(); renderTiles(); }
 
 /* Re-render visible UI after a remote sync update */
 function refreshUI(){
@@ -1145,7 +1246,19 @@ function fieldHtml(f){
     const inputmode = (f.t==='number'||f.t==='tel')?' inputmode="numeric"':'';
     input=`<input id="${id}" data-n="${f.n}" type="${f.t}"${inputmode}>`;
   }
-  return `<div class="field"><label for="${id}">${esc(f.l)}${req}</label>${input}</div>`;
+  const scanBtn = (f.scan || SCAN_FIELDS.includes(f.n)) && f.t!=='textarea' && f.t!=='select'
+    ? `<button type="button" class="btn-scan" data-scan="${id}" title="مسح باركود">${svg('scan',20)}</button>` : '';
+  const inner = scanBtn ? `<div class="scanrow">${input}${scanBtn}</div>` : input;
+  return `<div class="field"><label for="${id}">${esc(f.l)}${req}</label>${inner}</div>`;
+}
+function bindScanButtons(root){
+  (root||document).querySelectorAll('[data-scan]').forEach(btn=>{
+    btn.onclick=()=>{
+      const el=document.getElementById(btn.dataset.scan);
+      if(!el) return;
+      BarcodeScanner.open(v=>{ el.value=v; el.dispatchEvent(new Event('change')); el.dispatchEvent(new Event('blur')); });
+    };
+  });
 }
 function openForm(r){
   if(!canAccess(r)){ toast('سجل «'+r.title+'» مخصص لـ: '+([...SUPER.slice(0,1),...(r.roles||[])].join('، ')||'الإشراف')+'. غيّر الدور من الإعدادات.'); return; }
@@ -1162,6 +1275,7 @@ function openForm(r){
   });
   if(r.autoSerial){ const el=$('#f_serial'); if(el){ const mx=DB.reg[r.key].reduce((a,x)=>Math.max(a, Number(x.serial)||0),0); el.value=mx+1; } }
   smartFormAssist(r);
+  bindScanButtons($('#sheetBody'));
   $('#frmCancel').onclick=closeSheet;
   $('#frmSave').onclick=()=>saveForm(r);
   openSheet(r.addLabel||'إضافة سجل');
@@ -1253,6 +1367,13 @@ function saveForm(r){
       mark('استقبال بدون ترحيل'); logException('استقبال الشاحنة '+t+' بدون أمر ترحيل','سلسلة الشاحنة');
     }
   }
+  if(r.key==='finance'){
+    const empCats=['راتب/أجر موظف ميناء','بدل وردية موظف','مكافأة موظف ميناء'];
+    if(empCats.includes(rec.expenseCat) && !rec.employeeName){
+      const el=$('#f_employeeName'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('أدخل اسم الموظف لصرف الرواتب والبدلات'); return;
+    }
+    if(!rec.amount || Number(rec.amount)<=0){ const el=$('#f_amount'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('أدخل مبلغ الصرف'); return; }
+  }
   if(r.key==='violations'){
     if(!rec.action){ const el=$('#f_action'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('سجّل الإجراء الفوري المتخذ'); return; }
     if(rec.deputy!=='نعم'){
@@ -1270,21 +1391,26 @@ function openChecklistForm(){
   const r=CUR;
   if(!canAccess(r)){ toast('فحص الجودة مخصص لمسؤول الفحص والجودة. غيّر الدور من الإعدادات.'); return; }
   const head=`<div class="field"><label>اسم الفاحص</label><input id="f_inspector" value="${esc(DB.meta.operator||'')}"></div>
-    <div class="frow"><div class="field"><label>رقم الشاحنة</label><input id="f_truck" inputmode="numeric"></div>
+    <div class="frow"><div class="field"><label>رقم الشاحنة <span class="req">*</span></label>
+      <div class="scanrow"><input id="f_truck" inputmode="numeric" placeholder="امسح الباركود أو أدخل الرقم">
+      <button type="button" class="btn-scan" data-scan="f_truck" title="مسح باركود الشاحنة">${svg('scan',20)}</button></div></div>
     <div class="field"><label>التاريخ</label><input id="f_date" type="date" value="${todayDate()}"></div></div>
-    <div style="font-size:12px;color:var(--ink2);margin:4px 2px 10px;font-weight:600;">بنود الفحص</div>`;
+    <div style="font-size:12px;color:var(--ink2);margin:4px 2px 10px;font-weight:600;">مرحلة الفحص — بنود التحقق</div>`;
   const items=r.items.map((it,i)=>`<label class="check"><input type="checkbox" data-ci="${i}" checked><span>${esc(it)}</span></label>`).join('');
   const tail=`<div class="field" style="margin-top:12px"><label>ملاحظات</label><textarea id="f_notes"></textarea></div>`;
   $('#sheetBody').innerHTML=head+items+tail;
   $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="frmCancel" style="flex:.6">إلغاء</button><button class="btn btn-pri" id="frmSave">حفظ الفحص</button>`;
   $('#frmCancel').onclick=closeSheet;
+  bindScanButtons($('#sheetBody'));
   $('#frmSave').onclick=()=>{
+    const truck=$('#f_truck').value.trim();
+    if(!truck){ $('#f_truck').focus(); toast('امسح باركود الشاحنة أو أدخل رقمها'); return; }
     const items=r.items.map((it,i)=>({label:it, ok:$(`[data-ci="${i}"]`).checked}));
-    const rec={inspector:$('#f_inspector').value.trim(), truck:$('#f_truck').value.trim(),
+    const rec={inspector:$('#f_inspector').value.trim(), truck,
       date:$('#f_date').value, notes:$('#f_notes').value.trim(), items, _t:nowTime(), _d:todayDate(), _id:Date.now()};
-    DB.reg[r.key].push(rec); saveReg(r.key); closeSheet(); renderRegList(); toast('تم حفظ الفحص');
+    DB.reg[r.key].push(rec); saveReg(r.key); closeSheet(); renderRegList(); toast('تم حفظ مرحلة الفحص — يمكن التصدير الآن');
   };
-  openSheet('فحص قائمة الجودة');
+  openSheet('مرحلة الفحص — قائمة الجودة');
 }
 
 /* ============ Settings ============ */
@@ -1510,7 +1636,7 @@ function openHandover(){
       <div class="rline"><span class="k">وقائع سجل الحقائق</span><span class="v">${c('incidents')}</span></div>
       <div class="rline"><span class="k">اختلافات المطابقة المستقلة</span><span class="v" style="color:${diffs?'var(--danger)':'var(--ok)'}">${diffs}</span></div>
       <div class="rline"><span class="k">المخالفات التشغيلية</span><span class="v" style="color:${c('violations')?'var(--danger)':'var(--ok)'}">${c('violations')}</span></div>
-      <div class="rline"><span class="k">سجلات مالية معلقة</span><span class="v" style="color:${pendFin?'var(--warn)':'var(--ok)'}">${pendFin}</span></div>
+      <div class="rline"><span class="k">صرف موظفين/ميناء معلّق</span><span class="v" style="color:${pendFin?'var(--warn)':'var(--ok)'}">${pendFin}</span></div>
       <div class="rline"><span class="k">تجاوزات استثنائية موثّقة</span><span class="v" style="color:${ovr?'var(--danger)':'var(--ok)'}">${ovr}</span></div>
       <div class="rline"><span class="k">حالات تحتاج قرار رئيس الفريق</span><span class="v" style="color:${leaderCases?'var(--danger)':'var(--ok)'}">${leaderCases}</span></div>
       <div class="rline"><span class="k">المسؤول المناوب</span><span class="v">${esc(m.operator||'—')}</span></div>
@@ -1625,14 +1751,133 @@ function openGovernance(){
   show('gov');
 }
 
+/* ============ Barcode scanner ============ */
+const BarcodeScanner = {
+  _stream:null, _timer:null, _active:false,
+  async open(onResult){
+    if(this._active) return;
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      const manual=prompt('الماسح غير متاح — أدخل الرمز يدوياً:');
+      if(manual && onResult) onResult(String(manual).trim());
+      return;
+    }
+    const ov=document.createElement('div'); ov.className='scan-overlay'; ov.id='scanOv';
+    ov.innerHTML=`<div class="bar"><div class="t">مسح الباركود</div><button type="button" class="btn btn-ghost" id="scanClose" style="color:#F3ECDD;border-color:rgba(255,255,255,.2)">إغلاق</button></div>
+      <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <video id="scanVideo" playsinline muted autoplay></video><div class="frame"></div></div>
+      <div class="hint">وجّه الكاميرا نحو باركود الشاحنة أو البطاقة الوظيفية</div>`;
+    document.body.appendChild(ov); document.body.style.overflow='hidden'; this._active=true;
+    const video=ov.querySelector('#scanVideo');
+    const close=()=>this.close();
+    ov.querySelector('#scanClose').onclick=close;
+    try{
+      this._stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+      video.srcObject=this._stream; await video.play();
+    }catch(e){ close(); toast('تعذّر فتح الكاميرا — أدخل الرقم يدوياً'); return; }
+    const detect=async()=>{
+      if(!this._active) return;
+      try{
+        if(typeof BarcodeDetector!=='undefined'){
+          const det=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','qr_code','codabar','itf']});
+          if(video.readyState>=2){
+            const codes=await det.detect(video);
+            if(codes && codes[0] && codes[0].rawValue){
+              const v=String(codes[0].rawValue).trim(); close();
+              if(onResult) onResult(v); toast('تم المسح: '+v); return;
+            }
+          }
+        }
+      }catch(e){}
+      this._timer=setTimeout(detect, 280);
+    };
+    detect();
+  },
+  close(){
+    this._active=false;
+    if(this._timer){ clearTimeout(this._timer); this._timer=null; }
+    if(this._stream){ this._stream.getTracks().forEach(t=>t.stop()); this._stream=null; }
+    const ov=document.getElementById('scanOv'); if(ov) ov.remove();
+    document.body.style.overflow='';
+  }
+};
+
+/* ============ Device setup ============ */
+function openDeviceSetup(){
+  const gate=$('#deviceSetupGate'); if(!gate) return;
+  gate.classList.remove('hidden'); document.body.style.overflow='hidden';
+}
+function closeDeviceSetup(){ $('#deviceSetupGate').classList.add('hidden'); document.body.style.overflow=''; }
+async function configureDevice(mode){
+  DB.deviceSetup={mode, configured:true}; await saveDeviceSetup();
+  if(mode==='admin') await ensureSeedAdmin();
+  closeDeviceSetup(); openLogin();
+}
+$('#setup_admin').onclick=()=>configureDevice('admin');
+$('#setup_operator').onclick=()=>configureDevice('operator');
+
+/* ============ User provisioning (QR) ============ */
+function userProvisionPayload(u){
+  return ['WHEATOPS-USER','id='+u.id,'username='+u.username,'name='+u.name,'role='+u.role,'pass='+u.pass].join('\n');
+}
+function parseUserProvision(text){
+  if(!text || !String(text).includes('WHEATOPS-USER')) return null;
+  const lines=String(text).split(/\r?\n/); const o={};
+  lines.forEach(l=>{ const i=l.indexOf('='); if(i>0) o[l.slice(0,i).trim()]=l.slice(i+1).trim(); });
+  if(!o.username||!o.pass||!o.role) return null;
+  return { id:Number(o.id)||Date.now(), username:o.username.toLowerCase(), name:o.name||o.username,
+    role:o.role, pass:o.pass, active:true, mustChange:false, _t:nowTime(), _d:todayDate(), _by:'تفعيل QR' };
+}
+async function importProvisionedUser(data){
+  const existing=findUser(data.username);
+  if(existing){
+    Object.assign(existing,{name:data.name,role:data.role,pass:data.pass,active:true,mustChange:false});
+  } else {
+    DB.users.push(data);
+  }
+  await saveUsers();
+}
+function showUserProvisionQR(u){
+  if(!qrReady()){ toast('مكتبة QR غير جاهزة'); return; }
+  showQR('تفعيل حساب «'+(u.name||u.username)+'» على جهاز جديد', userProvisionPayload(u), 'user_'+u.username);
+  $('#sheetBody').insertAdjacentHTML('beforeend',
+    '<div class="hint" style="margin-top:12px">على جهاز الموظف: اختر «جهاز موظف ميداني» ثم «مسح QR تفعيل الحساب» وامسح هذا الرمز. بعدها يدخل باسمه وكلمة سره مباشرة إلى شاشته.</div>');
+}
+async function scanUserProvision(){
+  BarcodeScanner.open(async(raw)=>{
+    const data=parseUserProvision(raw);
+    if(!data){ toast('رمز التفعيل غير صالح'); return; }
+    await importProvisionedUser(data);
+    $('#lg_user').value=data.username;
+    toast('تم تفعيل الحساب — أدخل كلمة السر واضغط دخول');
+  });
+}
+
+/* ============ Role landing after login ============ */
+function goToRoleHome(u){
+  show('home'); renderHome();
+  if(isSupervisorRole(u.role)) return;
+  const primary=ROLE_PRIMARY[u.role];
+  if(primary && canAccess(REGMAP[primary])){
+    setTimeout(()=>{ openRegister(primary); toast('مرحباً '+(u.name||u.username)+' — شاشتك جاهزة'); }, 350);
+  } else {
+    toast('مرحباً '+(u.name||u.username));
+  }
+}
+
 /* ============ Login gate ============ */
 function openLogin(){
   const gate=$('#loginGate'); if(!gate) return;
   $('#lg_user').value=''; $('#lg_pass').value=''; $('#lg_err').textContent='';
   const admin=DB.users.find(u=>u.username==='admin');
-  $('#lg_hint').innerHTML = (admin && admin.mustChange)
-    ? 'أول تشغيل: ادخل باسم <b>admin</b> وكلمة السر <b>admin</b> ثم غيّرها فوراً من «المستخدمون».'
-    : 'أدخل بيانات حسابك. للمساعدة راجع مسؤول النظام.';
+  const op=isOperatorDevice();
+  const opEl=$('#lg_operator'); if(opEl) opEl.classList.toggle('hidden', !op);
+  if(op){
+    $('#lg_hint').innerHTML='أدخل اسم المستخدم وكلمة السر التي أنشأها المشرف لك.';
+  } else if(admin && admin.mustChange){
+    $('#lg_hint').innerHTML='أول تشغيل (جهاز المشرف): ادخل باسم <b>admin</b> وكلمة السر <b>admin</b> ثم أنشئ مستخدمين لبقية الفريق.';
+  } else {
+    $('#lg_hint').innerHTML='أدخل بيانات حسابك.';
+  }
   gate.classList.remove('hidden');
   document.body.style.overflow='hidden';
   setTimeout(()=>$('#lg_user').focus(),60);
@@ -1642,15 +1887,18 @@ async function doLogin(){
   const uname=$('#lg_user').value.trim(), pass=$('#lg_pass').value;
   const err=$('#lg_err');
   const u=findUser(uname);
-  if(!u){ err.textContent='اسم المستخدم غير موجود'; return; }
+  if(!u){
+    err.textContent=isOperatorDevice()?'الحساب غير مفعّل — اطلب من المشرف QR التفعيل أو أنشئ حسابك':'اسم المستخدم غير موجود';
+    return;
+  }
   if(u.active===false){ err.textContent='الحساب موقوف. راجع مسؤول النظام.'; return; }
   if(!(await verifyPass(pass, u.pass))){ err.textContent='كلمة السر غير صحيحة'; return; }
   DB.sessionUser=u.username; await Store.set('session', u.username);
-  applySession(); closeLogin(); show('home'); renderHome();
-  toast('مرحباً '+(u.name||u.username));
+  applySession(); closeLogin(); goToRoleHome(u);
 }
 $('#lg_btn').onclick=doLogin;
 $('#lg_pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+$('#lg_scan_user').onclick=scanUserProvision;
 async function doLogout(){
   DB.sessionUser=null; await Store.set('session', null);
   closeSheet(); show('home'); openLogin();
@@ -1714,8 +1962,20 @@ function openUserForm(u){
     }
     await saveUsers();
     if(currentUser()) applySession();
-    openUsers(); renderHome(); toast('تم حفظ المستخدم');
+    if(!isEdit){
+      const saved=DB.users[DB.users.length-1];
+      showUserProvisionQR(saved);
+      toast('تم إنشاء المستخدم — امسح QR التفعيل على جهاز الموظف');
+    } else {
+      openUsers(); toast('تم حفظ المستخدم');
+    }
+    renderHome();
   };
+  if(isEdit){
+    $('#sheetFoot').insertAdjacentHTML('afterbegin',
+      '<button class="btn btn-ghost" id="u_qr" style="flex:1;justify-content:center">QR تفعيل</button>');
+    $('#u_qr').onclick=()=>showUserProvisionQR(u);
+  }
   openSheet(isEdit?'تعديل مستخدم':'مستخدم جديد');
 }
 
@@ -1753,6 +2013,7 @@ if(window.Capacitor){ initNative(); }
   if(!DB.meta.startDate){ DB.meta.startDate=todayDate(); }
   renderHome();
   if(currentUser()){ applySession(); renderHome(); }
+  else if(!DB.deviceSetup || !DB.deviceSetup.configured){ openDeviceSetup(); }
   else { openLogin(); }
   try{ Sync.load(); if(Sync.active()) Sync.start(); }catch(e){}
 })();
