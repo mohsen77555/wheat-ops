@@ -8,13 +8,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#142C40">
+<meta name="color-scheme" content="light">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="تفريغ القمح">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <script>
 /* QR generator: try local bundled file first (offline/APK); fall back to CDN
    if the local file is missing OR present but doesn't define QRCode. */
@@ -28,6 +30,7 @@
 </script>
 <style>
   :root{
+    color-scheme:light;   /* light-only app: opt out of WebView force-dark / auto-darkening */
     --paper:#F1EBDD; --paper2:#FBF8F1; --card:#FFFFFF;
     --ink:#1B1813; --ink2:#615A4C; --ink3:#938A78;
     --line:#E0D8C6; --line2:#D2C8B2;
@@ -40,15 +43,20 @@
     --shadow-lg:0 10px 40px rgba(20,16,8,.18);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   html,body{margin:0;padding:0;}
   body{
     font-family:'IBM Plex Sans Arabic',sans-serif;
     background:
       radial-gradient(120% 60% at 80% -10%, #fff6e2 0%, transparent 60%),
       var(--paper);
-    color:var(--ink); line-height:1.55; min-height:100vh;
+    color:var(--ink); line-height:1.55;
+    min-height:100vh; min-height:100dvh;
     overflow-x:hidden;
+    overscroll-behavior-y:contain;            /* no pull-to-refresh / glow bounce */
+    -webkit-user-select:none;user-select:none; /* native-app feel; inputs re-enabled below */
   }
+  input,select,textarea{-webkit-user-select:text;user-select:text;}
   body::before{
     content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.5;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
@@ -60,13 +68,23 @@
   ::-webkit-scrollbar{height:6px;width:6px;}
   ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px;}
 
-  #app{position:relative;z-index:1;max-width:560px;margin:0 auto;padding-bottom:40px;}
+  #app{
+    position:relative;z-index:1;max-width:560px;margin:0 auto;
+    padding-bottom:calc(40px + env(safe-area-inset-bottom));
+  }
+  /* tablets / large android screens: keep a comfortable reading column */
+  @media (min-width:680px){
+    #app{max-width:620px;}
+    .sheet{max-width:620px;}
+  }
 
   /* ---- Command bar ---- */
   .topbar{
     position:sticky;top:0;z-index:30;
     background:linear-gradient(180deg,var(--navy) 0%,var(--navy2) 100%);
-    color:#F3ECDD; padding:14px 16px 12px;
+    color:#F3ECDD;
+    padding:14px 16px 12px; /* fallback for engines without env() */
+    padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left));
     border-bottom:3px solid var(--wheat);
     box-shadow:0 6px 18px rgba(10,22,33,.25);
   }
@@ -130,7 +148,9 @@
   /* ---- Register view ---- */
   .rv-head{
     position:sticky;top:0;z-index:20;background:var(--paper2);border-bottom:1px solid var(--line);
-    padding:12px 14px;display:flex;align-items:center;gap:11px;backdrop-filter:blur(8px);
+    padding:12px 14px; /* fallback for engines without env() */
+    padding:calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 12px calc(14px + env(safe-area-inset-left));
+    display:flex;align-items:center;gap:11px;backdrop-filter:blur(8px);
   }
   .rv-head .back{width:38px;height:38px;border-radius:10px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;}
   .rv-head .ttl{flex:1;min-width:0;}
@@ -256,6 +276,21 @@
   @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .hidden{display:none!important;}
 
+  /* ---- Sub-screens as popups (over home) ---- */
+  .subscrim{position:fixed;inset:0;background:rgba(15,20,28,.45);z-index:44;opacity:0;pointer-events:none;transition:.2s;}
+  .subscrim.on{opacity:1;pointer-events:auto;}
+  .subview-on{
+    position:fixed;top:0;bottom:0;left:0;right:0;max-width:560px;margin:0 auto;z-index:45;
+    background:var(--paper2);
+    overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    box-shadow:var(--shadow-lg);
+    animation:popIn .26s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes popIn{from{opacity:0;transform:translateY(14px) scale(.985);}to{opacity:1;transform:none;}}
+  @media (min-width:680px){
+    .subview-on{max-width:620px;border-radius:16px;top:2.5vh;bottom:2.5vh;box-shadow:var(--shadow-lg);}
+  }
+
   /* QR */
   .recact{margin-top:10px;display:flex;gap:8px;}
   .qrmini{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy2);background:var(--paper);border:1px solid var(--line2);border-radius:9px;padding:7px 12px;}
@@ -267,6 +302,17 @@
   .qrload{font-size:12px;color:var(--ink3);}
   .qrerr{font-size:12px;color:var(--danger);text-align:center;padding:10px;line-height:1.6;}
   .qrtext{white-space:pre-wrap;font-size:12.5px;color:var(--ink2);background:var(--paper);border:1px dashed var(--line2);border-radius:11px;padding:11px 13px;width:100%;text-align:right;line-height:1.8;font-family:'IBM Plex Sans Arabic';}
+
+  /* ---- Smart alerts ---- */
+  .alerts{display:flex;flex-direction:column;gap:8px;}
+  .alert{display:flex;align-items:center;gap:9px;width:100%;text-align:right;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);font-size:12.8px;font-weight:600;color:var(--ink);animation:rise .4s cubic-bezier(.2,.7,.3,1) backwards;}
+  .alert svg{flex:0 0 auto;width:17px;height:17px;}
+  .alert .ago{margin-inline-start:auto;font-size:11px;color:var(--ink3);font-weight:600;white-space:nowrap;}
+  .alert.a-warn{border-color:var(--warn);} .alert.a-warn svg{color:var(--warn);}
+  .alert.a-danger{border-color:var(--danger);} .alert.a-danger svg{color:var(--danger);}
+  .alert:active{transform:scale(.99);}
+  .alert-ok{display:flex;align-items:center;gap:8px;padding:11px 13px;border-radius:12px;background:var(--ok-bg);color:var(--ok);font-size:12.8px;font-weight:600;}
+  .alert-ok svg{width:17px;height:17px;}
 
   @media print{
     .topbar,.rv-tools,.sh-foot,.footnote,#printBtn,.iconbtn,.rv-head .back,.report button{display:none!important;}
@@ -282,7 +328,7 @@
       <div class="row">
         <div class="brand">
           <div class="t">تفريغ باخرة قمح سائب</div>
-          <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b></div>
+          <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b> · <span id="tb-ver" style="opacity:.85"></span></div>
         </div>
         <button class="iconbtn" id="openSettings" title="الإعدادات">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -295,6 +341,9 @@
       <div class="sec-h"><h2>المؤشرات اللحظية</h2><span class="hint">الوردية الحالية</span></div>
       <div class="kpis" id="kpis"></div>
 
+      <div class="sec-h" id="alertsHead"><h2>تنبيهات ذكية</h2><span class="hint">إجراءات مقترحة</span></div>
+      <div class="alerts" id="alerts"></div>
+
       <div class="sec-h"><h2>السجلات والنماذج</h2><span class="hint">١٢ سجلاً</span></div>
       <div class="tiles" id="tiles"></div>
 
@@ -304,6 +353,8 @@
       </div>
     </div>
   </div>
+
+</div><!-- /#app -->
 
   <!-- REGISTER -->
   <div id="view-reg" class="hidden">
@@ -339,8 +390,21 @@
     </div>
     <div id="govBody" style="padding:14px;"></div>
   </div>
-</div>
 
+<div id="loginGate" class="hidden" style="position:fixed;inset:0;z-index:80;background:linear-gradient(180deg,var(--navy),#0e2030);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;">
+  <div style="width:100%;max-width:360px;background:var(--paper2);border-radius:18px;border-top:3px solid var(--wheat);box-shadow:var(--shadow-lg);padding:22px;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-family:'Reem Kufi';font-size:19px;font-weight:600;color:var(--ink)">تسجيل الدخول</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">نظام تفريغ باخرة القمح السائب</div>
+    </div>
+    <div class="field"><label>اسم المستخدم</label><input id="lg_user" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
+    <div class="field"><label>كلمة السر</label><input id="lg_pass" type="password" autocomplete="current-password"></div>
+    <div id="lg_err" style="color:var(--danger);font-size:12.5px;min-height:18px;margin-bottom:4px"></div>
+    <button class="btn btn-pri" id="lg_btn" style="width:100%;justify-content:center">دخول</button>
+    <div id="lg_hint" class="hint" style="text-align:center;margin-top:12px"></div>
+  </div>
+</div>
+<div class="subscrim" id="subscrim"></div>
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet">
   <div class="grip"></div>
@@ -352,6 +416,24 @@
 
 <script>
 "use strict";
+
+/* ============ Crash guard ============ */
+/* If anything throws, show a readable message instead of a blank screen. */
+window.addEventListener('error', function(e){
+  try{
+    if(document.getElementById('__err')) return;
+    var d=document.createElement('div'); d.id='__err';
+    d.style.cssText='position:fixed;inset:0;z-index:9999;background:#142C40;color:#F3ECDD;'
+      +'font:14px/1.7 sans-serif;padding:24px;direction:rtl;text-align:right;overflow:auto;';
+    d.innerHTML='<div style="font-size:17px;font-weight:700;margin-bottom:10px;color:#F2DEAE">'
+      +'حدث خطأ أثناء تشغيل التطبيق</div>'
+      +'<div style="opacity:.9">'+String((e&&e.message)||e)+'</div>'
+      +'<div style="opacity:.6;margin-top:8px;font-size:12px">'
+      +String((e&&e.filename)||'')+' : '+String((e&&e.lineno)||'')+'</div>'
+      +'<div style="opacity:.7;margin-top:16px;font-size:12px">أعد فتح التطبيق. إن تكررت المشكلة صوّر هذه الشاشة وأرسلها.</div>';
+    document.body.appendChild(d);
+  }catch(_){}
+});
 
 /* ============ Icons ============ */
 const I = {
@@ -380,16 +462,201 @@ const I = {
 const svg = (n,w=20)=>`<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${I[n]||I.doc}</svg>`;
 
 /* ============ Storage ============ */
+/* Durable persistence. On a real device the old `window.storage` API does NOT
+   exist, so without this the app kept data only in memory and lost everything
+   on restart (always showing "no records"). localStorage persists across app
+   restarts in the Android WebView and in the browser/PWA. `window.storage` is
+   kept as a legacy fallback; `mem` is a last resort if storage is unavailable. */
 const Store = {
   mem:{},
-  has(){ try{ return !!window.storage; }catch(e){ return false; } },
+  PREFIX:'wheatops:',
+  lastBackend:'memory',
+  _prefs(){ try{ var P=window.Capacitor&&window.Capacitor.Plugins; return (P&&P.Preferences)?P.Preferences:null; }catch(e){ return null; } },
+  hasLS(){ try{ return typeof localStorage!=='undefined' && localStorage!==null; }catch(e){ return false; } },
+  hasExt(){ try{ return !!window.storage; }catch(e){ return false; } },
   async get(key){
-    if(this.has()){ try{ const r = await window.storage.get(key,false); return r? JSON.parse(r.value):null; }catch(e){ return null; } }
-    return (key in this.mem)? this.mem[key]:null;
+    /* 1) localStorage — synchronous and persistent in the WebView */
+    if(this.hasLS()){
+      try{
+        var v = localStorage.getItem(this.PREFIX+key);
+        if(v===null) v = localStorage.getItem(key);   /* migrate older un-prefixed keys */
+        if(v!==null){ this.lastBackend='localStorage'; return JSON.parse(v); }
+      }catch(e){}
+    }
+    /* 2) native Preferences — survives even if WebView storage is cleared;
+          repopulate localStorage from it when found (recovery). */
+    var P=this._prefs();
+    if(P){
+      try{
+        var r = await P.get({key:this.PREFIX+key});
+        if(r && r.value!=null){
+          if(this.hasLS()){ try{ localStorage.setItem(this.PREFIX+key, r.value); }catch(e){} }
+          this.lastBackend='preferences'; return JSON.parse(r.value);
+        }
+      }catch(e){}
+    }
+    /* 3) legacy window.storage (original design platform only) */
+    if(this.hasExt()){
+      try{ const r2 = await window.storage.get(key,false); if(r2){ this.lastBackend='window.storage'; return JSON.parse(r2.value); } }catch(e){}
+    }
+    return (key in this.mem)? this.mem[key] : null;
   },
   async set(key,val){
     this.mem[key]=val;
-    if(this.has()){ try{ await window.storage.set(key, JSON.stringify(val), false); }catch(e){} }
+    const json = JSON.stringify(val);
+    var ok=false;
+    if(this.hasLS()){ try{ localStorage.setItem(this.PREFIX+key, json); ok=true; this.lastBackend='localStorage'; }catch(e){} }
+    var P=this._prefs();
+    if(P){ try{ await P.set({key:this.PREFIX+key, value:json}); ok=true; this.lastBackend='preferences'; }catch(e){} }
+    if(this.hasExt()){ try{ await window.storage.set(key, json, false); ok=true; }catch(e){} }
+    if(!ok) this.lastBackend='memory';
+    try{ if(typeof Sync!=='undefined') Sync.onLocalSet(key, val); }catch(e){}
+  },
+  /* On-device self-test: write then read back a probe value. */
+  async selfTest(){
+    var probe='ok-'+Date.now();
+    await this.set('__selftest', probe);
+    var back = await this.get('__selftest');
+    return { ok: back===probe, backend:this.lastBackend };
+  }
+};
+
+/* ============ Cloud sync (Firebase Realtime DB · REST + live stream) ============ */
+/* Optional real-time multi-device sync. Every device enters the same Realtime
+   Database URL + team code; edits on one device then appear on the others.
+   Records are append-only and merged by id (nothing is lost). The app works
+   fully offline and syncs when back online. Sync is opt-in (off by default). */
+function deviceId(){
+  try{ var k='wheatops:deviceId', v=localStorage.getItem(k);
+    if(!v){ v='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); localStorage.setItem(k,v); }
+    return v;
+  }catch(e){ return 'd0'; }
+}
+function isCollectionKey(k){ return k==='handovers' || k==='users' || k.indexOf('reg:')===0; }
+function recId(x){ return x ? (x._id!=null? x._id : x.id) : null; }
+function unionById(localArr, remoteArr){
+  localArr=Array.isArray(localArr)?localArr:[]; remoteArr=Array.isArray(remoteArr)?remoteArr:[];
+  var map={}, order=[];
+  function add(x){ var id=recId(x); if(id==null){ order.push('__n'+order.length); map['__n'+(order.length-1)]=x; return; } if(!(id in map)) order.push(id); map[id]=x; }
+  localArr.forEach(add); remoteArr.forEach(function(x){ var id=recId(x); if(id==null) return; if(!(id in map)) order.push(id); map[id]=x; });
+  return order.map(function(id){ return map[id]; });
+}
+function sanitizeKey(k){ return k.indexOf('reg:')===0 ? 'reg_'+k.slice(4) : k; }
+function desanitizeKey(k){ return k.indexOf('reg_')===0 ? 'reg:'+k.slice(4) : k; }
+
+const Sync = {
+  cfg:null, es:null, dev:deviceId(), applying:false, lastHash:{}, status:'off', authToken:null, refreshTimer:null,
+  load(){ try{ this.cfg=JSON.parse(localStorage.getItem('wheatops:syncCfg')||'null'); }catch(e){ this.cfg=null; } return this.cfg; },
+  save(cfg){ this.cfg=cfg; try{ localStorage.setItem('wheatops:syncCfg', JSON.stringify(cfg)); }catch(e){} },
+  active(){ return !!(this.cfg && this.cfg.enabled && this.cfg.url && this.cfg.team); },
+  base(){ var u=(this.cfg.url||'').replace(/\/+$/,''); return u+'/teams/'+encodeURIComponent(this.cfg.team); },
+  hash(s){ s=String(s); var h=5381,i=s.length; while(i) h=(h*33)^s.charCodeAt(--i); return h>>>0; },
+  hasAuth(){ return !!(this.cfg && this.cfg.apiKey && this.cfg.email && this.cfg.password); },
+  q(){ return this.authToken? ('?auth='+encodeURIComponent(this.authToken)) : ''; },
+  /* Firebase Authentication (Email/Password) via REST → ID token used to
+     authorize Realtime Database requests when DB rules require auth. */
+  async getToken(cfg){
+    if(!(cfg && cfg.apiKey && cfg.email && cfg.password)) return {ok:true, token:null, mode:'open'};
+    try{
+      var res=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(cfg.apiKey),
+        { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email:cfg.email, password:cfg.password, returnSecureToken:true}) });
+      var j=await res.json();
+      if(j && j.idToken) return {ok:true, token:j.idToken, expiresIn:(+j.expiresIn||3600), mode:'auth'};
+      return {ok:false, msg:(j&&j.error&&j.error.message)||'فشل تسجيل الدخول للمصادقة'};
+    }catch(e){ return {ok:false, msg:'تعذّر الاتصال بخدمة المصادقة'}; }
+  },
+  async authenticate(){
+    var r=await this.getToken(this.cfg);
+    if(r.ok){
+      this.authToken=r.token||null;
+      if(r.token){ clearTimeout(this.refreshTimer); var self=this, ms=Math.max(60000,(r.expiresIn-300)*1000);
+        this.refreshTimer=setTimeout(function(){ self.authenticate().then(function(rr){ if(rr.ok) self.start(); }); }, ms); }
+    }
+    return r;
+  },
+  async push(key, val){
+    if(!this.active()) return;
+    var env={ v: JSON.stringify(val), t: Date.now(), dev: this.dev };
+    this.lastHash[key]=this.hash(env.v);
+    try{ await fetch(this.base()+'/'+sanitizeKey(key)+'.json'+this.q(),{ method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(env) }); }catch(e){}
+  },
+  onLocalSet(key, val){
+    if(this.applying || !this.active()) return;
+    if(key==='meta' || isCollectionKey(key)) this.push(key, val);
+  },
+  async applyEnvelope(key, env){
+    if(!env || env.dev===this.dev || env.v==null) return;     // skip own echoes / empty
+    var h=this.hash(env.v); if(this.lastHash[key]===h) return;
+    var remote; try{ remote=JSON.parse(env.v); }catch(e){ return; }
+    this.applying=true;
+    try{
+      if(isCollectionKey(key)){
+        var local = key==='handovers'? DB.handovers : (key==='users'? DB.users : DB.reg[key.slice(4)]);
+        var merged = unionById(local, remote);
+        if(key==='handovers'){ DB.handovers=merged; await Store.set('handovers', merged); }
+        else if(key==='users'){ DB.users=merged; await Store.set('users', merged); }
+        else { var rk=key.slice(4); DB.reg[rk]=merged; await Store.set('reg:'+rk, merged); }
+        this.lastHash[key]=this.hash(env.v);
+        if(this.hash(JSON.stringify(merged))!==this.hash(JSON.stringify(remote))){ this.applying=false; this.push(key, merged); this.applying=true; }
+      } else if(key==='meta'){
+        DB.meta=Object.assign({}, DEFAULT_META, remote||{}); await Store.set('meta', DB.meta);
+        applySession(); this.lastHash[key]=h;
+      }
+    }catch(e){}
+    this.applying=false;
+    refreshUI();
+  },
+  handleData(path, data){
+    if(path==='/' || path===''){
+      if(!data) return;
+      var self=this; Object.keys(data).forEach(function(k){ if(k.indexOf('__')!==0) self.applyEnvelope(desanitizeKey(k), data[k]); });
+    } else {
+      var k=path.replace(/^\//,'').split('/')[0];
+      if(k.indexOf('__')!==0) this.applyEnvelope(desanitizeKey(k), data);
+    }
+  },
+  async start(){
+    this.stop();
+    if(!this.active()){ this.status='off'; return; }
+    if(typeof EventSource==='undefined'){ this.status='no-sse'; return; }
+    var self=this; this.status='connecting';
+    var auth=await this.authenticate();
+    if(!auth.ok){ this.status='auth-error'; refreshUI(); return; }
+    try{
+      var es=new EventSource(this.base()+'.json'+this.q()); this.es=es;
+      var onMsg=function(ev){ if(!ev.data) return; try{ var m=JSON.parse(ev.data); self.status='live'; self.handleData(m.path, m.data); }catch(e){} };
+      es.addEventListener('put', onMsg);
+      es.addEventListener('patch', onMsg);
+      var reauth=function(){ self.authenticate().then(function(r){ if(r.ok) self.start(); else { self.status='auth-error'; refreshUI(); } }); };
+      es.addEventListener('auth_revoked', reauth);
+      es.addEventListener('cancel', reauth);
+      es.onopen=function(){ self.status='live'; self.pushAll(); refreshUI(); };
+      es.onerror=function(){ if(self.status!=='live') self.status='error'; };
+    }catch(e){ this.status='error'; }
+  },
+  stop(){ if(this.es){ try{ this.es.close(); }catch(e){} this.es=null; } if(this.status!=='off') this.status='off'; },
+  pushAll(){
+    if(!this.active()) return;
+    this.push('users', DB.users);
+    this.push('handovers', DB.handovers);
+    REGS.forEach(r=> this.push('reg:'+r.key, DB.reg[r.key]) );
+  },
+  async test(cfg){
+    var auth=await this.getToken(cfg);
+    if(!auth.ok) return {ok:false, msg:'المصادقة: '+(auth.msg||'فشلت')};
+    var q=auth.token? ('?auth='+encodeURIComponent(auth.token)) : '';
+    try{
+      var b=(cfg.url||'').replace(/\/+$/,'')+'/teams/'+encodeURIComponent(cfg.team||'')+'/__ping.json';
+      var probe={ t:Date.now(), dev:this.dev };
+      var w=await fetch(b+q,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(probe)});
+      if(!w.ok) return {ok:false, msg:'تعذّرت الكتابة ('+w.status+') — تحقق من الرابط وقواعد القاعدة'+(auth.token?' (المصادقة ناجحة)':'')};
+      var r=await fetch(b+q); var j=await r.json();
+      return (j && j.dev===this.dev)? {ok:true, mode:auth.mode} : {ok:false, msg:'تعذّرت القراءة من القاعدة'};
+    }catch(e){ return {ok:false, msg:'تعذّر الاتصال بالعنوان'}; }
+  },
+  statusText(){
+    return {off:'متوقفة',connecting:'جارٍ الاتصال…',live:'متصلة ومتزامنة ✓'+(this.hasAuth()?' (مُصادَق)':''),
+      error:'خطأ في الاتصال','auth-error':'فشلت المصادقة — تحقق من المفتاح/الحساب','no-sse':'غير مدعومة على هذا الجهاز'}[this.status]||this.status;
   }
 };
 
@@ -549,17 +816,17 @@ const REGS = [
     ], titleField:'truck', titlePrefix:'شاحنة', statusField:'approval', statusTone:{'معتمد':'ok','معلق':'warn','مرفوض':'danger'},
     list:['amount','destination','exportOrder','dispatchOrder','receipt','missing'] }
 ];
-const REGMAP = Object.fromEntries(REGS.map(r=>[r.key,r]));
+const REGMAP = {}; REGS.forEach(function(r){ REGMAP[r.key]=r; });
 
 /* roles allowed to ENTER data per register (supervisors always allowed) */
 const SUPER=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق'];
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.2';
+const APP_VERSION='1.6.0';
 
 /* ============ State ============ */
-const DB = { meta:{}, reg:{}, handovers:[] };
+const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null };
 const DEFAULT_META = { ship:'INCE INEBOLU', port:'الصليف', startDate:'', shift:'الوردية الأولى', operator:'', role:'', hoppers:'', approvedBy:'' };
 
 async function loadAll(){
@@ -569,14 +836,55 @@ async function loadAll(){
     DB.reg[r.key] = (await Store.get('reg:'+r.key)) || [];
   }
   DB.handovers = (await Store.get('handovers')) || [];
+  DB.users = (await Store.get('users')) || [];
+  DB.sessionUser = await Store.get('session');
+  await ensureSeedAdmin();
 }
 async function saveMeta(){ await Store.set('meta', DB.meta); }
 async function saveReg(key){ await Store.set('reg:'+key, DB.reg[key]); }
 async function saveHandovers(){ await Store.set('handovers', DB.handovers); }
+async function saveUsers(){ await Store.set('users', DB.users); }
+
+/* ============ Users / Auth ============ */
+async function hashPass(s){
+  s=String(s);
+  try{
+    if(typeof crypto!=='undefined' && crypto.subtle){
+      const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+      return 'sha256:'+Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){}
+  let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h)+s.charCodeAt(i); h|=0; }
+  return 'djb2:'+(h>>>0).toString(16);
+}
+async function verifyPass(s,stored){ return (await hashPass(s))===stored; }
+async function ensureSeedAdmin(){
+  if(!Array.isArray(DB.users)) DB.users=[];
+  if(DB.users.length===0){
+    DB.users.push({ id:Date.now(), name:'المسؤول', username:'admin', role:'رئيس الفريق',
+      pass:await hashPass('admin'), active:true, mustChange:true, _t:nowTime(), _d:todayDate(), _by:'النظام' });
+    await saveUsers();
+  }
+}
+function findUser(username){
+  const u=(username||'').trim().toLowerCase();
+  return DB.users.find(x=>(x.username||'').toLowerCase()===u);
+}
+function currentUser(){
+  if(!DB.sessionUser) return null;
+  const u=findUser(DB.sessionUser);
+  return (u && u.active!==false)? u : null;
+}
+function currentRole(){ const u=currentUser(); return u? (u.role||'') : (DB.meta.role||''); }
+function isAdmin(){ const u=currentUser(); return u? SUPER.includes(u.role) : true; }
+function applySession(){
+  const u=currentUser();
+  if(u){ DB.meta.operator=u.name||u.username; DB.meta.role=u.role||''; }
+}
 
 /* ============ Governance enforcement ============ */
 function canAccess(r){
-  const role=DB.meta.role||'';
+  const role=currentRole();
   if(!role) return true;                 // role not set → full access (configure per device)
   if(SUPER.includes(role)) return true;  // supervisors: full access
   return (r.roles||[]).includes(role);
@@ -621,6 +929,7 @@ function toast(msg){
 function renderMeta(){
   $('#tb-ship').textContent = DB.meta.ship||'—';
   $('#tb-port').textContent = DB.meta.port||'—';
+  var ver=$('#tb-ver'); if(ver) ver.textContent='إصدار '+APP_VERSION;
   const chips=[
     ['cal', 'التاريخ', DB.meta.startDate||'غير محدد'],
     ['clock','الوردية', DB.meta.shift||'—'],
@@ -669,16 +978,70 @@ function renderTiles(){
   });
 }
 
-function renderHome(){ renderMeta(); renderKpis(); renderTiles(); }
-
-/* ============ Navigation ============ */
-function show(view){
-  ['home','reg','handover','gov'].forEach(v=>$('#view-'+v).classList.toggle('hidden', v!==view));
-  window.scrollTo(0,0);
+/* ============ Smart alerts (actionable insights) ============ */
+function computeAlerts(){
+  const A=[], norm=v=>String(v||'').trim();
+  const exp=DB.reg.export||[], dis=DB.reg.dispatch||[], rec=DB.reg.reception||[];
+  const setDis=new Set(dis.map(x=>norm(x.truck)).filter(Boolean));
+  const setRec=new Set(rec.map(x=>norm(x.truck)).filter(Boolean));
+  const setChk=new Set((DB.reg.checklist||[]).map(x=>norm(x.truck)).filter(Boolean));
+  const loadedNoDispatch = exp.filter(x=>{const t=norm(x.truck);return t&&!setDis.has(t);}).length;
+  const dispatchedNoReception = dis.filter(x=>{const t=norm(x.truck);return t&&!setRec.has(t);}).length;
+  const exportedNoCheck = exp.filter(x=>{const t=norm(x.truck);return t&&!setChk.has(t);}).length;
+  const diffs=(DB.reg.reconcile||[]).filter(x=>x.result==='اختلاف').length;
+  const vioNoDeputy=(DB.reg.violations||[]).filter(x=>norm(x.deputy)!=='نعم').length;
+  const pendFin=(DB.reg.finance||[]).filter(x=>x.approval==='معلق').length;
+  const openStops=(DB.reg.stoppages||[]).filter(x=>norm(x.startTime)&&!norm(x.endTime)).length;
+  if(diffs) A.push({t:diffs+' اختلاف مطابقة بحاجة معالجة', tone:'danger', go:'reconcile'});
+  if(vioNoDeputy) A.push({t:vioNoDeputy+' مخالفة دون إبلاغ نائب الرئيس', tone:'danger', go:'violations'});
+  if(openStops) A.push({t:openStops+' توقف مفتوح (بلا وقت عودة)', tone:'warn', go:'stoppages'});
+  if(loadedNoDispatch) A.push({t:loadedNoDispatch+' شاحنة محمّلة بلا ترحيل', tone:'warn', go:'dispatch'});
+  if(dispatchedNoReception) A.push({t:dispatchedNoReception+' شاحنة مرحّلة بلا استقبال', tone:'warn', go:'reception'});
+  if(exportedNoCheck) A.push({t:exportedNoCheck+' شاحنة صُدّرت بلا فحص جودة', tone:'warn', go:'checklist'});
+  if(pendFin) A.push({t:pendFin+' سجل مالي معلّق', tone:'warn', go:'finance'});
+  return A;
 }
-$('#regBack').onclick=()=>{ renderHome(); show('home'); };
-$('#hoBack').onclick=()=>{ renderHome(); show('home'); };
-$('#govBack').onclick=()=>{ renderHome(); show('home'); };
+function renderAlerts(){
+  const el=$('#alerts'); if(!el) return;
+  const A=computeAlerts();
+  if(!A.length){ el.innerHTML=`<div class="alert-ok">${svg('quality',16)}<span>كل شيء منضبط — لا تنبيهات حالياً.</span></div>`; return; }
+  el.innerHTML=A.map((a,i)=>`<button class="alert a-${a.tone}" data-go="${a.go}" style="animation-delay:${i*40}ms">${svg('incident',16)}<span>${esc(a.t)}</span><span class="ago">عرض ›</span></button>`).join('');
+  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>openRegister(b.dataset.go));
+}
+
+function renderHome(){ renderMeta(); renderKpis(); renderAlerts(); renderTiles(); }
+
+/* Re-render visible UI after a remote sync update */
+function refreshUI(){
+  try{
+    renderHome();
+    if(typeof CUR!=='undefined' && CUR && !$('#view-reg').classList.contains('hidden')) renderRegList();
+    var st=$('#sy_status'); if(st && typeof Sync!=='undefined') st.innerHTML='حالة المزامنة: <b>'+esc(Sync.statusText())+'</b>';
+  }catch(e){}
+}
+
+/* ============ Navigation (sub-screens open as popups over home) ============ */
+const SUBVIEWS={reg:'#view-reg',handover:'#view-handover',gov:'#view-gov'};
+function closeSub(){
+  Object.values(SUBVIEWS).forEach(s=>{ const el=$(s); el.classList.add('hidden'); el.classList.remove('subview-on'); });
+  $('#subscrim').classList.remove('on');
+  document.body.style.overflow='';
+}
+function show(view){
+  if(view==='home'){ closeSub(); return; }
+  // home stays mounted underneath; the target opens as a popup overlay
+  Object.entries(SUBVIEWS).forEach(([k,s])=>{
+    const el=$(s);
+    if(k===view){ el.classList.remove('hidden'); el.classList.add('subview-on'); el.scrollTop=0; }
+    else{ el.classList.add('hidden'); el.classList.remove('subview-on'); }
+  });
+  $('#subscrim').classList.add('on');
+  document.body.style.overflow='hidden';   // lock background scroll
+}
+$('#subscrim').onclick=()=>show('home');
+$('#regBack').onclick=()=>{ show('home'); renderHome(); };
+$('#hoBack').onclick=()=>{ show('home'); renderHome(); };
+$('#govBack').onclick=()=>{ show('home'); renderHome(); };
 
 /* ============ Register view ============ */
 let CUR=null, FILTER='';
@@ -798,9 +1161,57 @@ function openForm(r){
     if(f.n==='officer' && DB.meta.operator) el.value=DB.meta.operator;
   });
   if(r.autoSerial){ const el=$('#f_serial'); if(el){ const mx=DB.reg[r.key].reduce((a,x)=>Math.max(a, Number(x.serial)||0),0); el.value=mx+1; } }
+  smartFormAssist(r);
   $('#frmCancel').onclick=closeSheet;
   $('#frmSave').onclick=()=>saveForm(r);
   openSheet(r.addLabel||'إضافة سجل');
+}
+
+/* ============ Smart form assist (autocomplete + auto-fill from history) ============ */
+const AUTOFILL_FIELDS=['truck','driver','destination','officer','hopper','hold','mobile','section'];
+function distinctValues(field){
+  const set=new Set();
+  REGS.forEach(r=>{ (DB.reg[r.key]||[]).forEach(rec=>{ const v=rec&&rec[field]; if(v&&String(v).trim()) set.add(String(v).trim()); }); });
+  return Array.from(set).slice(0,300);
+}
+function truckProfile(truck){
+  truck=(truck||'').trim(); if(!truck) return null;
+  const profile={}; const pick=['driver','destination','hopper','hold','mobile'];
+  // take the most recent non-empty value per field across all registers
+  let bestId={};
+  REGS.forEach(r=>{ (DB.reg[r.key]||[]).forEach(rec=>{
+    if(String(rec.truck||'').trim()!==truck) return;
+    const id=Number(rec._id)||0;
+    pick.forEach(f=>{ if(rec[f]&&String(rec[f]).trim() && id>=(bestId[f]||0)){ profile[f]=String(rec[f]).trim(); bestId[f]=id; } });
+  }); });
+  return Object.keys(profile).length? profile : null;
+}
+function smartFormAssist(r){
+  const body=$('#sheetBody');
+  (r.fields||[]).forEach(f=>{
+    if((f.t==='text'||f.t==='tel') && AUTOFILL_FIELDS.includes(f.n)){
+      const el=$('#f_'+f.n); if(!el) return;
+      const vals=distinctValues(f.n); if(!vals.length) return;
+      const dlid='dl_'+f.n; el.setAttribute('list',dlid); el.setAttribute('autocomplete','off');
+      const dl=document.createElement('datalist'); dl.id=dlid;
+      dl.innerHTML=vals.map(v=>`<option value="${esc(v)}"></option>`).join('');
+      body.appendChild(dl);
+    }
+  });
+  // typing a known truck number auto-fills its known data (skip on export — it originates it)
+  const tEl=$('#f_truck');
+  if(tEl && r.key!=='export'){
+    const apply=()=>{
+      const p=truckProfile(tEl.value); if(!p) return;
+      let filled=0;
+      ['driver','destination','hopper','hold','mobile'].forEach(f=>{
+        const el=$('#f_'+f); if(el && !el.value && p[f]){ el.value=p[f]; filled++; }
+      });
+      if(filled) toast('عُبّئت بيانات الشاحنة تلقائياً من سجل سابق');
+    };
+    tEl.addEventListener('change', apply);
+    tEl.addEventListener('blur', apply);
+  }
 }
 function saveForm(r){
   const rec={};
@@ -879,21 +1290,24 @@ function openChecklistForm(){
 /* ============ Settings ============ */
 function openSettings(){
   const m=DB.meta;
-  $('#sheetBody').innerHTML=`
+  const cu=currentUser();
+  const accountGroup = `
+    <div class="setgrp"><div class="gh">الحساب</div><div style="padding:12px 14px 14px">
+      <div class="hint" style="margin-bottom:10px">${cu?('المستخدم الحالي: <b style="color:var(--ink)">'+esc(cu.name||cu.username)+'</b> · الدور: '+esc(cu.role||'—')):'لم يتم تسجيل الدخول'}</div>
+      ${isAdmin()?'<button class="btn btn-ghost" id="s_users" style="width:100%;margin-bottom:9px;justify-content:center">إدارة المستخدمين والصلاحيات</button>':''}
+      <button class="btn btn-ghost" id="s_logout" style="width:100%;justify-content:center">تسجيل الخروج</button>
+    </div></div>`;
+  const adminGroups = `
     <div class="setgrp"><div class="gh">بيانات العملية</div><div style="padding:12px 14px 2px">
       <div class="field"><label>اسم الباخرة</label><input id="s_ship" value="${esc(m.ship)}"></div>
       <div class="field"><label>موقع التفريغ</label><input id="s_port" value="${esc(m.port)}"></div>
       <div class="field"><label>تاريخ بدء العملية</label><input id="s_date" type="date" value="${esc(m.startDate)}"></div>
     </div></div>
-    <div class="setgrp"><div class="gh">الوردية الحالية</div><div style="padding:12px 14px 2px">
-      <div class="field"><label>الوردية</label><select id="s_shift">
+    <div class="setgrp"><div class="gh">الوردية الحالية</div><div style="padding:12px 14px 14px">
+      <div class="field" style="margin-bottom:0"><label>الوردية</label><select id="s_shift">
         ${['الوردية الأولى','الوردية الثانية','الوردية الثالثة','صباحية','مسائية','ليلية'].map(o=>`<option ${o===m.shift?'selected':''}>${o}</option>`).join('')}
       </select></div>
-      <div class="field"><label>المسؤول المناوب</label><input id="s_op" value="${esc(m.operator)}" placeholder="اسم مدير العمليات المناوب"></div>
-      <div class="field"><label>دور هذا الجهاز (الصلاحيات)</label><select id="s_role">
-        <option value="">وصول كامل (غير محدد)</option>
-        ${ALL_ROLES.map(o=>`<option ${o===m.role?'selected':''}>${o}</option>`).join('')}
-      </select><div class="hint">يحدد السجلات المسموح الإدخال فيها من هذا الجهاز. المشرفون لهم وصول كامل.</div></div>
+      <div class="hint" style="margin-top:8px">المسؤول والدور (الصلاحيات) يأتيان من حساب الدخول. لتغييرهما استخدم «إدارة المستخدمين».</div>
     </div></div>
     <div class="setgrp"><div class="gh">ضوابط التشغيل</div><div style="padding:12px 14px 14px">
       <div class="field"><label>الهوبر المعتمد (أرقام مفصولة بفواصل)</label><input id="s_hop" value="${esc(m.hoppers)}" placeholder="مثال: 1، 2، 3">
@@ -904,7 +1318,27 @@ function openSettings(){
         <div class="hint">إن لم يفتح على أجهزة الفريق، الصق رابط المشاركة من Claude أو رابط الاستضافة هنا.</div></div>
       <button class="btn btn-ghost" id="s_qr" style="width:100%;justify-content:center">توليد رمز QR لفتح التطبيق</button>
     </div></div>
-    <div class="setgrp"><div class="gh">البيانات</div><div style="padding:12px 14px 14px">
+    <div class="setgrp"><div class="gh">المزامنة بين الأجهزة (سحابي)</div><div style="padding:12px 14px 14px">
+      <div id="sy_status" class="hint" style="margin-bottom:10px">حالة المزامنة: <b>${esc(typeof Sync!=='undefined'?Sync.statusText():'—')}</b></div>
+      <div class="field"><label>رابط قاعدة البيانات (Firebase Realtime DB)</label><input id="sy_url" autocapitalize="none" spellcheck="false" value="${esc((Sync.cfg&&Sync.cfg.url)||'')}" placeholder="https://xxxx-default-rtdb.firebaseio.com"></div>
+      <div class="field"><label>رمز الفريق (نفسه على كل الأجهزة)</label><input id="sy_team" autocapitalize="none" spellcheck="false" value="${esc((Sync.cfg&&Sync.cfg.team)||'')}" placeholder="مثال: salif-2026"></div>
+      <div style="font-size:11.5px;font-weight:700;color:var(--ink3);margin:6px 2px 8px">المصادقة الكاملة (تأمين القاعدة)</div>
+      <div class="field"><label>مفتاح الويب (Web API Key)</label><input id="sy_key" autocapitalize="none" spellcheck="false" value="${esc((Sync.cfg&&Sync.cfg.apiKey)||'')}" placeholder="AIza..."></div>
+      <div class="field"><label>بريد حساب المزامنة</label><input id="sy_email" type="email" autocapitalize="none" spellcheck="false" value="${esc((Sync.cfg&&Sync.cfg.email)||'')}" placeholder="sync@example.com"></div>
+      <div class="field"><label>كلمة سر حساب المزامنة</label><input id="sy_pass" type="password" autocomplete="off" value="${esc((Sync.cfg&&Sync.cfg.password)||'')}" placeholder="••••••••"></div>
+      <label class="check"><input type="checkbox" id="sy_en" ${(Sync.cfg&&Sync.cfg.enabled)?'checked':''}><span>تفعيل المزامنة اللحظية</span></label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn btn-ghost" id="sy_test" style="flex:1;justify-content:center">فحص الاتصال</button>
+        <button class="btn btn-ghost" id="sy_qr" style="flex:1;justify-content:center">QR للمشاركة</button>
+      </div>
+      <div class="hint" style="margin-top:10px;line-height:1.85">
+        الإعداد مرة واحدة: ١) أنشئ مشروع Firebase مجاني وفعّل <b>Realtime Database</b>. ٢) من Authentication فعّل <b>Email/Password</b> وأنشئ حساباً واحداً للمزامنة. ٣) اضبط قواعد القاعدة على: <span class="mono">{".read":"auth!=null",".write":"auth!=null"}</span>. ٤) املأ الرابط ومفتاح الويب وبريد/كلمة سر الحساب ورمز الفريق هنا، وضع نفسها في كل الأجهزة (زر QR للمشاركة).
+        <br>اترك حقول المصادقة فارغة لاستخدام «وضع الاختبار» المفتوح (غير آمن). السجلات تُدمج ولا تُحذف.
+      </div>
+    </div></div>
+    <div class="setgrp"><div class="gh">البيانات والتخزين</div><div style="padding:12px 14px 14px">
+      <div id="s_storage" class="hint" style="margin-bottom:9px">حالة التخزين: —</div>
+      <button class="btn btn-ghost" id="s_selftest" style="width:100%;margin-bottom:9px;justify-content:center">فحص حفظ البيانات الآن</button>
       <button class="btn btn-ghost" id="s_export" style="width:100%;margin-bottom:9px;justify-content:center">تصدير كل السجلات (CSV)</button>
       <button class="btn" id="s_reset" style="width:100%;background:var(--danger-bg);color:var(--danger);justify-content:center">تصفير كل البيانات</button>
     </div></div>
@@ -912,13 +1346,50 @@ function openSettings(){
       <div class="field"><label>اعتماد الإصدار (الاسم)</label><input id="s_appr" value="${esc(m.approvedBy)}" placeholder="يُعتمد من رئيس الفريق / نائبه"></div>
       <div class="hint">إصدار البرنامج: ${APP_VERSION} · آخر تحميل: ${esc(todayDate())}</div>
     </div></div>`;
-  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="setCancel" style="flex:.6">إغلاق</button><button class="btn btn-pri" id="setSave">حفظ</button>`;
+  const adminOnly = isAdmin();
+  $('#sheetBody').innerHTML = accountGroup + (adminOnly ? adminGroups :
+    `<div class="setgrp"><div class="gh">معلومات</div><div style="padding:12px 14px 14px"><div class="hint">الضبط والصلاحيات والمزامنة متاحة للمشرفين فقط.<br>إصدار البرنامج: ${APP_VERSION}</div></div></div>`);
+  $('#sheetFoot').innerHTML = adminOnly
+    ? `<button class="btn btn-ghost" id="setCancel" style="flex:.6">إغلاق</button><button class="btn btn-pri" id="setSave">حفظ</button>`
+    : `<button class="btn btn-ghost" id="setCancel" style="width:100%;justify-content:center">إغلاق</button>`;
   $('#setCancel').onclick=closeSheet;
+  $('#s_logout').onclick=doLogout;
+  if(adminOnly){
   $('#setSave').onclick=()=>{
     DB.meta.ship=$('#s_ship').value.trim()||'—'; DB.meta.port=$('#s_port').value.trim()||'—';
-    DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value; DB.meta.operator=$('#s_op').value.trim();
-    DB.meta.role=$('#s_role').value; DB.meta.hoppers=$('#s_hop').value.trim(); DB.meta.approvedBy=$('#s_appr').value.trim();
-    saveMeta(); closeSheet(); renderHome(); toast('تم حفظ الإعدادات');
+    DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value;
+    DB.meta.hoppers=$('#s_hop').value.trim(); DB.meta.approvedBy=$('#s_appr').value.trim();
+    applySession();  // keep operator/role from the logged-in account
+    const syUrl=$('#sy_url').value.trim().replace(/\/+$/,''), syTeam=$('#sy_team').value.trim(), syEn=$('#sy_en').checked;
+    Sync.save({ url:syUrl, team:syTeam, enabled: syEn && !!syUrl && !!syTeam,
+      apiKey:$('#sy_key').value.trim(), email:$('#sy_email').value.trim(), password:$('#sy_pass').value });
+    Sync.start();
+    saveMeta(); closeSheet(); renderHome(); toast(Sync.active()?'تم الحفظ — المزامنة مفعّلة':'تم حفظ الإعدادات');
+  };
+  const su=$('#s_users'); if(su) su.onclick=openUsers;
+  $('#sy_test').onclick=async()=>{
+    const cfg={ url:$('#sy_url').value.trim(), team:$('#sy_team').value.trim(),
+      apiKey:$('#sy_key').value.trim(), email:$('#sy_email').value.trim(), password:$('#sy_pass').value };
+    if(!cfg.url||!cfg.team){ toast('أدخل الرابط ورمز الفريق أولاً'); return; }
+    toast('جارٍ فحص الاتصال…');
+    const r=await Sync.test(cfg);
+    const st=$('#sy_status'); if(st) st.innerHTML='حالة المزامنة: <b style="color:'+(r.ok?'var(--ok)':'var(--danger)')+'">'+(r.ok?('الاتصال ناجح ✓'+(r.mode==='auth'?' (مُصادَق)':' (مفتوح)')):esc(r.msg))+'</b>';
+    toast(r.ok?'الاتصال بالقاعدة ناجح':('تعذّر: '+r.msg));
+  };
+  $('#sy_qr').onclick=()=>{
+    const url=$('#sy_url').value.trim(), team=$('#sy_team').value.trim();
+    if(!url||!team){ toast('أدخل الرابط ورمز الفريق أولاً'); return; }
+    const lines=['WHEATOPS-SYNC','url='+url,'team='+team];
+    const k=$('#sy_key').value.trim(), em=$('#sy_email').value.trim(), pw=$('#sy_pass').value;
+    if(k) lines.push('apiKey='+k); if(em) lines.push('email='+em); if(pw) lines.push('password='+pw);
+    showQR('مشاركة إعداد المزامنة', lines.join('\n'), 'sync_config');
+  };
+  const backendName=b=>({localStorage:'محفوظ على الجهاز (localStorage)',preferences:'محفوظ على الجهاز (تخزين أندرويد)','window.storage':'تخزين خارجي',memory:'مؤقت فقط — لن يُحفظ!'}[b]||b);
+  (async()=>{ const el=$('#s_storage'); if(!el) return; const r=await Store.selfTest(); el.innerHTML='حالة التخزين: <b style="color:'+(r.ok?'var(--ok)':'var(--danger)')+'">'+(r.ok?'يعمل ✓':'لا يعمل ✗')+'</b> — '+esc(backendName(r.backend)); })();
+  $('#s_selftest').onclick=async()=>{
+    const r=await Store.selfTest();
+    const el=$('#s_storage'); if(el) el.innerHTML='حالة التخزين: <b style="color:'+(r.ok?'var(--ok)':'var(--danger)')+'">'+(r.ok?'يعمل ✓':'لا يعمل ✗')+'</b> — '+esc(backendName(r.backend));
+    toast(r.ok?('الحفظ يعمل · '+backendName(r.backend)):'تعذّر الحفظ على هذا الجهاز');
   };
   $('#s_export').onclick=exportAll;
   $('#s_qr').onclick=()=>{ const u=$('#s_url').value.trim(); if(!u){ toast('أدخل الرابط أولاً'); return; } showQR('رمز فتح التطبيق', u, 'app_link'); };
@@ -927,6 +1398,7 @@ function openSettings(){
     for(const r of REGS){ DB.reg[r.key]=[]; await saveReg(r.key); }
     closeSheet(); renderHome(); toast('تم تصفير البيانات');
   };
+  } /* end adminOnly */
   openSheet('الإعدادات');
 }
 $('#openSettings').onclick=openSettings;
@@ -1153,16 +1625,136 @@ function openGovernance(){
   show('gov');
 }
 
+/* ============ Login gate ============ */
+function openLogin(){
+  const gate=$('#loginGate'); if(!gate) return;
+  $('#lg_user').value=''; $('#lg_pass').value=''; $('#lg_err').textContent='';
+  const admin=DB.users.find(u=>u.username==='admin');
+  $('#lg_hint').innerHTML = (admin && admin.mustChange)
+    ? 'أول تشغيل: ادخل باسم <b>admin</b> وكلمة السر <b>admin</b> ثم غيّرها فوراً من «المستخدمون».'
+    : 'أدخل بيانات حسابك. للمساعدة راجع مسؤول النظام.';
+  gate.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>$('#lg_user').focus(),60);
+}
+function closeLogin(){ $('#loginGate').classList.add('hidden'); document.body.style.overflow=''; }
+async function doLogin(){
+  const uname=$('#lg_user').value.trim(), pass=$('#lg_pass').value;
+  const err=$('#lg_err');
+  const u=findUser(uname);
+  if(!u){ err.textContent='اسم المستخدم غير موجود'; return; }
+  if(u.active===false){ err.textContent='الحساب موقوف. راجع مسؤول النظام.'; return; }
+  if(!(await verifyPass(pass, u.pass))){ err.textContent='كلمة السر غير صحيحة'; return; }
+  DB.sessionUser=u.username; await Store.set('session', u.username);
+  applySession(); closeLogin(); show('home'); renderHome();
+  toast('مرحباً '+(u.name||u.username));
+}
+$('#lg_btn').onclick=doLogin;
+$('#lg_pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+async function doLogout(){
+  DB.sessionUser=null; await Store.set('session', null);
+  closeSheet(); show('home'); openLogin();
+}
+
+/* ============ User management (admins/supervisors) ============ */
+function openUsers(){
+  if(!isAdmin()){ toast('إدارة المستخدمين متاحة للمشرفين فقط'); return; }
+  const rows = DB.users.map(u=>`
+    <button class="rec" data-uid="${esc(u.id)}" style="text-align:right;width:100%;display:block;cursor:pointer">
+      <div class="rh">
+        <div class="id">${esc(u.name||u.username)} <small>@${esc(u.username)}</small></div>
+        ${u.active===false?toneBadge('danger','موقوف'):toneBadge('ok','نشط')}
+      </div>
+      <div class="kv one"><div class="f"><span class="k">الصلاحية / الدور</span><span class="v">${esc(u.role||'—')}</span></div></div>
+    </button>`).join('');
+  $('#sheetBody').innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">${rows||'<div class="empty"><p>لا يوجد مستخدمون.</p></div>'}</div>`;
+  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="usrClose" style="flex:.6">إغلاق</button><button class="btn btn-pri" id="usrAdd">+ مستخدم جديد</button>`;
+  $('#usrClose').onclick=closeSheet;
+  $('#usrAdd').onclick=()=>openUserForm(null);
+  $('#sheetBody').querySelectorAll('[data-uid]').forEach(b=>b.onclick=()=>{
+    const u=DB.users.find(x=>String(x.id)===b.dataset.uid); if(u) openUserForm(u);
+  });
+  openSheet('المستخدمون والصلاحيات');
+}
+function openUserForm(u){
+  const isEdit=!!u;
+  $('#sheetBody').innerHTML=`
+    <div class="field"><label>الاسم الكامل <span class="req">*</span></label><input id="u_name" value="${esc(u?u.name:'')}"></div>
+    <div class="field"><label>اسم المستخدم (للدخول) <span class="req">*</span></label>
+      <input id="u_username" autocapitalize="none" spellcheck="false" value="${esc(u?u.username:'')}" ${isEdit?'disabled style="opacity:.6"':''}></div>
+    <div class="field"><label>الصلاحية / الدور <span class="req">*</span></label>
+      <select id="u_role">${ALL_ROLES.map(r=>`<option ${u&&u.role===r?'selected':''}>${esc(r)}</option>`).join('')}</select>
+      <div class="hint">المشرفون (${esc(SUPER.join('، '))}) لهم وصول كامل وإدارة المستخدمين.</div></div>
+    <div class="field"><label>كلمة السر ${isEdit?'(اتركها فارغة للإبقاء على الحالية)':'<span class="req">*</span>'}</label>
+      <input id="u_pass" type="text" autocomplete="new-password" placeholder="${isEdit?'•••••• (دون تغيير)':'كلمة السر'}"></div>
+    <label class="check"><input type="checkbox" id="u_active" ${(!u||u.active!==false)?'checked':''}><span>الحساب نشط (يسمح بالدخول)</span></label>`;
+  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="uCancel" style="flex:.6">رجوع</button>
+    ${isEdit?'<button class="btn" id="uDel" style="background:var(--danger-bg);color:var(--danger)">حذف</button>':''}
+    <button class="btn btn-pri" id="uSave">حفظ</button>`;
+  $('#uCancel').onclick=openUsers;
+  if(isEdit) $('#uDel').onclick=async()=>{
+    if(u.username==='admin'){ toast('لا يمكن حذف حساب admin الأساسي'); return; }
+    if(currentUser() && currentUser().id===u.id){ toast('لا يمكنك حذف حسابك الحالي'); return; }
+    if(!confirm('حذف المستخدم «'+(u.name||u.username)+'»؟')) return;
+    DB.users=DB.users.filter(x=>x.id!==u.id); await saveUsers(); openUsers(); toast('تم حذف المستخدم');
+  };
+  $('#uSave').onclick=async()=>{
+    const name=$('#u_name').value.trim(), uname=$('#u_username').value.trim().toLowerCase();
+    const role=$('#u_role').value, pass=$('#u_pass').value, active=$('#u_active').checked;
+    if(!name){ toast('أدخل الاسم الكامل'); return; }
+    if(!isEdit){
+      if(!uname){ toast('أدخل اسم المستخدم'); return; }
+      if(findUser(uname)){ toast('اسم المستخدم مستخدم مسبقاً'); return; }
+      if(!pass){ toast('أدخل كلمة السر'); return; }
+      DB.users.push({ id:Date.now(), name, username:uname, role, pass:await hashPass(pass), active,
+        _t:nowTime(), _d:todayDate(), _by:(currentUser()?currentUser().name:'') });
+    } else {
+      u.name=name; u.role=role; u.active=active; u.mustChange=false;
+      if(pass) u.pass=await hashPass(pass);
+    }
+    await saveUsers();
+    if(currentUser()) applySession();
+    openUsers(); renderHome(); toast('تم حفظ المستخدم');
+  };
+  openSheet(isEdit?'تعديل مستخدم':'مستخدم جديد');
+}
+
+/* ============ Native (Capacitor) integration ============ */
+/* When running inside the Android app, tint the system status bar to match the
+   navy command bar and disable web overscroll. Safe no-op in a normal browser. */
+function initNative(){
+  try{
+    var C = window.Capacitor;
+    if(!C || !C.isNativePlatform || !C.isNativePlatform()) return;
+    document.documentElement.classList.add('native');
+    var P = C.Plugins || {};
+    if(P.StatusBar){
+      try{ P.StatusBar.setOverlaysWebView({ overlay:false }); }catch(e){}
+      try{ P.StatusBar.setBackgroundColor({ color:'#142C40' }); }catch(e){}
+      try{ P.StatusBar.setStyle({ style:'DARK' }); }catch(e){} /* DARK = light icons on dark bar */
+    }
+    if(P.SplashScreen){ try{ P.SplashScreen.hide(); }catch(e){} }
+  }catch(e){}
+}
+
 /* ============ Init ============ */
-if('serviceWorker' in navigator){
+/* Service worker only helps when served over http(s) as a website/PWA.
+   Skip inside the native app (assets are already local) and on file://. */
+var isNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+if('serviceWorker' in navigator && !isNativeApp && (location.protocol==='http:' || location.protocol==='https:')){
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('sw.js').catch(function(){});
   });
 }
+document.addEventListener('deviceready', initNative, false);
+if(window.Capacitor){ initNative(); }
 (async function init(){
   await loadAll();
   if(!DB.meta.startDate){ DB.meta.startDate=todayDate(); }
   renderHome();
+  if(currentUser()){ applySession(); renderHome(); }
+  else { openLogin(); }
+  try{ Sync.load(); if(Sync.active()) Sync.start(); }catch(e){}
 })();
 </script>
 </body>

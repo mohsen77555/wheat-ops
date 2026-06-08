@@ -1,0 +1,44 @@
+{
+  "name": "wheat-ops",
+  "version": "1.6.0",
+  "description": "نظام تفريغ باخرة القمح السائب — Android app (Capacitor) for wheat ship unloading operations management.",
+  "private": true,
+  "scripts": {
+    "icons": "node scripts/gen-icons.mjs",
+    "assets": "npm run icons && capacitor-assets generate --android",
+    "sync": "cap sync android",
+    "open:android": "cap open android",
+    "build:apk": "cap sync android && cd android && ./gradlew assembleDebug",
+    "build:apk:release": "cap sync android && cd android && ./gradlew assembleRelease"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mohsen77555/wheat-ops.git"
+  },
+  "keywords": [
+    "capacitor",
+    "android",
+    "wheat",
+    "logistics",
+    "rtl",
+    "arabic"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mohsen77555/wheat-ops/issues"
+  },
+  "homepage": "https://github.com/mohsen77555/wheat-ops#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "sharp": "^0.34.5"
+  }
+}

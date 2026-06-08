@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+*.apk
+*.aab
+
+# Keep the published, ready-to-install APK(s) under dist/
+!dist/
+!dist/*.apk
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# Local SDK config
+android/local.properties

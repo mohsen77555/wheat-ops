@@ -1,0 +1,23 @@
+{
+  "appId": "com.salif.wheatops",
+  "appName": "تفريغ القمح",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#142C40"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 900,
+      "backgroundColor": "#142C40",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": false,
+      "splashImmersive": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#142C40",
+      "overlaysWebView": false
+    }
+  }
+}
