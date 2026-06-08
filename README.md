@@ -27,7 +27,7 @@ scripts/gen-icons.mjs Rasterizes resources/*.svg into PNG icons
 ## Install directly on your phone (ready-made APK)
 
 A ready-to-install debug APK is published in this repo:
-[`dist/wheat-ops-1.7.2.apk`](dist/wheat-ops-1.7.2.apk) (includes native camera barcode scanner, smart finance, user provisioning).
+[`dist/wheat-ops-1.7.3.apk`](dist/wheat-ops-1.7.3.apk) (governance, record chain linkage, barcode scanner, smart finance, user provisioning).
 
 Older build: [`dist/wheat-ops-1.6.0.apk`](dist/wheat-ops-1.6.0.apk).
 

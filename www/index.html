@@ -349,6 +349,7 @@
   body.operator-mode #secKpis, body.operator-mode #kpis,
   body.operator-mode #secWorkflow, body.operator-mode #workflow,
   body.operator-mode #alertsHead, body.operator-mode #alerts,
+  body.operator-mode #secGovMeter, body.operator-mode #govMeter,
   body.operator-mode #secTiles, body.operator-mode #tiles,
   body.operator-mode .home-footnote{display:none!important;}
   body.operator-mode #operatorHub{display:block!important;}
@@ -359,6 +360,33 @@
   body.operator-mode #regBack{display:none;}
   .tile.tile-primary{grid-column:1/-1;padding:18px 16px;}
   .tile.tile-primary .nm{font-size:15px;}
+
+  /* ---- Record chain / governance ---- */
+  .gov-meter{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:12px;}
+  .gov-meter .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .gov-meter .pct{font-family:'IBM Plex Mono';font-size:22px;font-weight:700;color:var(--ok);}
+  .gov-meter .pct.warn{color:var(--warn);} .gov-meter .pct.bad{color:var(--danger);}
+  .gov-meter .bar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;}
+  .gov-meter .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#3aa86a);border-radius:6px;transition:width .4s;}
+  .chain-dots{display:flex;gap:4px;align-items:center;margin-top:8px;}
+  .chain-dot{width:10px;height:10px;border-radius:50%;background:var(--line);border:1px solid var(--line2);}
+  .chain-dot.ok{background:var(--ok);border-color:var(--ok);}
+  .chain-dot.warn{background:var(--warn);border-color:var(--warn);}
+  .chain-dot.miss{background:var(--danger-bg);border-color:var(--danger);}
+  .chain-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy2);background:var(--paper);border:1px solid var(--line2);border-radius:9px;padding:7px 12px;margin-top:8px;}
+  .chain-link:active{transform:scale(.97);}
+  .chain-timeline{display:flex;flex-direction:column;gap:0;padding:4px 0;}
+  .chain-step{display:flex;gap:12px;position:relative;padding:10px 0;}
+  .chain-step:not(:last-child)::before{content:'';position:absolute;right:15px;top:34px;bottom:-6px;width:2px;background:var(--line);}
+  .chain-step .node{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;z-index:1;border:2px solid var(--line);background:var(--card);}
+  .chain-step.ok .node{border-color:var(--ok);background:var(--ok-bg);color:var(--ok);}
+  .chain-step.warn .node{border-color:var(--warn);background:var(--warn-bg);color:var(--warn);}
+  .chain-step.miss .node{border-color:var(--danger);background:var(--danger-bg);color:var(--danger);}
+  .chain-step .body{flex:1;min-width:0;}
+  .chain-step .bl{font-weight:700;font-size:13px;}
+  .chain-step .bs{font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.5;}
+  .gov-gap{display:flex;align-items:center;gap:8px;width:100%;text-align:right;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;font-size:12.5px;}
+  .gov-gap:active{transform:scale(.99);}
 
   @media print{
     .topbar,.rv-tools,.sh-foot,.footnote,#printBtn,.iconbtn,.rv-head .back,.report button{display:none!important;}
@@ -399,6 +427,9 @@
 
       <div class="sec-h" id="alertsHead"><h2>تنبيهات ذكية</h2><span class="hint">إجراءات مقترحة</span></div>
       <div class="alerts" id="alerts"></div>
+
+      <div class="sec-h" id="secGovMeter"><h2>حوكمة وامتثال السلسلة</h2><span class="hint">ترابط السجلات</span></div>
+      <div id="govMeter"></div>
 
       <div class="sec-h" id="secTiles"><h2>السجلات والنماذج</h2><span class="hint">١٢ سجلاً</span></div>
       <div class="tiles" id="tiles"></div>
@@ -924,8 +955,16 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.7.2';
+const APP_VERSION='1.7.3';
 const WORKFLOW_KEYS=['checklist','export','dispatch','reception'];
+const CHAIN_STAGES=[
+  {key:'checklist',label:'مرحلة الفحص',icon:'checklist',required:true},
+  {key:'export',label:'التصدير',icon:'truck',required:true},
+  {key:'dispatch',label:'الترحيل',icon:'dispatch',required:true},
+  {key:'reception',label:'الاستقبال',icon:'reception',required:true},
+  {key:'quality',label:'ملاحظة جودة',icon:'quality',required:false}
+];
+const CHAIN_LINK_KEYS=['checklist','export','dispatch','reception','quality','violations','reconcile'];
 const ROLE_PRIMARY={
   'مسؤول التصدير':'export','مسؤول الترحيل':'dispatch','مسؤول الاستقبال':'reception',
   'مسؤول الفحص والجودة':'checklist','المالية':'finance'
@@ -1036,6 +1075,72 @@ function approvedHoppers(){
 function govGate(message){
   return confirm(message+'\n\nاضغط «موافق» للتجاوز الاستثنائي (يُسجَّل في سجل الحقائق)،\nأو «إلغاء» للتصحيح.');
 }
+function normTruck(v){ return String(v||'').trim(); }
+function latestByTruck(key, truck){
+  const t=normTruck(truck);
+  const arr=(DB.reg[key]||[]).filter(x=>normTruck(x.truck)===t);
+  if(!arr.length) return null;
+  return arr.reduce((a,b)=>(Number(b._id)||0)>(Number(a._id)||0)?b:a);
+}
+function buildTruckChain(truck){
+  const t=normTruck(truck), c={truck:t};
+  CHAIN_STAGES.forEach(s=>{ c[s.key]=latestByTruck(s.key,t); });
+  c.violations=(DB.reg.violations||[]).filter(x=>normTruck(x.truck)===t);
+  c.reconcile=latestByTruck('reconcile',t);
+  return c;
+}
+function chainStageStatus(truck){
+  return CHAIN_STAGES.map(s=>{
+    const rec=latestByTruck(s.key,truck);
+    let tone='miss';
+    if(rec) tone=rec._override?'warn':'ok';
+    else if(!s.required) tone='neutral';
+    return Object.assign({},s,{rec,tone,done:!!rec,state:rec?(rec._override?'تجاوز موثّق':'مكتمل'):(s.required?'ناقص':'اختياري')});
+  });
+}
+function isChainComplete(truck){
+  return chainStageStatus(truck).filter(s=>s.required).every(s=>s.done);
+}
+function allTrucksInChain(){
+  const set=new Set();
+  CHAIN_LINK_KEYS.forEach(k=>{ (DB.reg[k]||[]).forEach(r=>{ const t=normTruck(r.truck); if(t) set.add(t); }); });
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'ar'));
+}
+function governanceStats(){
+  const trucks=allTrucksInChain();
+  const complete=trucks.filter(isChainComplete).length;
+  const gaps=trucks.filter(t=>!isChainComplete(t)).map(t=>({
+    truck:t, missing:chainStageStatus(t).filter(s=>s.required&&!s.done).map(s=>s.label)
+  }));
+  return {total:trucks.length, complete, broken:trucks.length-complete,
+    pct:trucks.length?Math.round(complete/trucks.length*100):100, gaps};
+}
+function linkChainOnSave(rec){
+  const t=normTruck(rec.truck);
+  if(!t) return;
+  rec._chainTruck=t;
+  const links={};
+  CHAIN_LINK_KEYS.forEach(k=>{
+    const r=latestByTruck(k,t);
+    if(r) links[k]=r._id;
+  });
+  rec._links=links;
+}
+function chainDotsHtml(truck){
+  return '<div class="chain-dots">'+chainStageStatus(truck).filter(s=>s.required).map(s=>
+    `<span class="chain-dot ${s.done?(s.tone==='warn'?'warn':'ok'):'miss'}" title="${esc(s.label)}"></span>`
+  ).join('')+'</div>';
+}
+function chainSummaryLine(rec,r){
+  const t=normTruck(rec.truck);
+  if(!t) return '';
+  if(r.key==='export' && rec.serial) return 'تسلسل '+rec.serial+' · '+esc(rec.destination||'');
+  if(r.key==='dispatch' && rec.orderNo) return 'أمر '+rec.orderNo;
+  if(r.key==='reception' && rec.status) return esc(rec.status);
+  if(r.key==='checklist' && rec.items) return (rec.items.filter(x=>x.ok).length)+'/'+rec.items.length+' بنود';
+  if(r.key==='quality' && rec.obsType) return esc(rec.obsType);
+  return rec._t?('س '+rec._t):'';
+}
 function logException(desc, refNote){
   DB.reg.incidents.push({ date:todayDate(), time:nowTime(), eventType:'مخالفة',
     hold:'', desc:desc, action:'تجاوز استثنائي معتمد من المناوب', deputy:'', notifyTime:'',
@@ -1130,7 +1235,7 @@ function renderTiles(){
     locked:!canAccess(r),
     cnt:(r.isChecklist? (DB.reg[r.key]||[]).length : DB.reg[r.key].length)}));
   items.push({key:'__handover',title:'تسليم الوردية',short:'ملخص وتقرير الوردية',icon:'handover',color:{bg:'#EAEFF5',fg:'#1E3F5A'},cnt:''});
-  items.push({key:'__gov',title:'حوكمة البرنامج',short:'قواعد الضبط وسلامة البيانات',icon:'gov',color:{bg:'#E8EDF3',fg:'#142C40'},cnt:''});
+  items.push({key:'__gov',title:'حوكمة البرنامج',short:'قواعد الضبط وترابط السجلات',icon:'gov',color:{bg:'#E8EDF3',fg:'#142C40'},cnt:governanceStats().pct+'%'});
   $('#tiles').innerHTML = items.map((t,i)=>`
     <button class="tile" data-tile="${t.key}" style="animation-delay:${i*40}ms${t.locked?';opacity:.62':''}">
       <div class="top">
@@ -1170,6 +1275,8 @@ function computeAlerts(){
   if(pendFin) A.push({t:pendFin+' صرف موظف/ميناء معلّق', tone:'warn', go:'finance'});
   const finTotal=(DB.reg.finance||[]).filter(x=>x.approval==='معتمد').reduce((a,x)=>a+(Number(x.amount)||0),0);
   if(finTotal>0 && isAdmin()) A.push({t:'إجمالي صرف معتمد: '+finTotal.toLocaleString('ar-SA')+' ريال', tone:'ok', go:'finance'});
+  const g=governanceStats();
+  if(g.broken && isAdmin()) A.push({t:g.broken+' شاحنة بسلسلة سجلات ناقصة', tone:'warn', go:'__chains'});
   if(allowed) return A.filter(a=>allowed.includes(a.go));
   return A;
 }
@@ -1196,12 +1303,33 @@ function renderAlerts(){
   const A=computeAlerts();
   if(!A.length){ el.innerHTML=`<div class="alert-ok">${svg('quality',16)}<span>كل شيء منضبط — لا تنبيهات حالياً.</span></div>`; return; }
   el.innerHTML=A.map((a,i)=>`<button class="alert a-${a.tone}" data-go="${a.go}" style="animation-delay:${i*40}ms">${svg('incident',16)}<span>${esc(a.t)}</span><span class="ago">عرض ›</span></button>`).join('');
-  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>openRegister(b.dataset.go));
+  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
+    if(b.dataset.go==='__chains') openChainRegistry(); else openRegister(b.dataset.go);
+  });
 }
 
+function renderGovMeter(){
+  const el=$('#govMeter'), head=$('#secGovMeter');
+  if(!el) return;
+  if(isOperatorView()){ el.innerHTML=''; if(head) head.style.display='none'; return; }
+  if(head) head.style.display='';
+  const g=governanceStats();
+  const cls=g.pct>=90?'':(g.pct>=70?' warn':' bad');
+  el.innerHTML=`<div class="gov-meter">
+    <div class="top"><div><div style="font-size:12px;color:var(--ink2)">سلاسل شاحنات مكتملة (فحص→تصدير→ترحيل→استقبال)</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">${g.complete} من ${g.total} شاحنة · ${g.broken} بها فجوات</div></div>
+      <div class="pct${cls}">${g.pct}%</div></div>
+    <div class="bar"><i style="width:${g.pct}%"></i></div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="gm_chains" style="flex:1;justify-content:center;font-size:12px">سلاسل الشاحنات</button>
+      <button class="btn btn-ghost" id="gm_gov" style="flex:1;justify-content:center;font-size:12px">حوكمة البرنامج</button>
+    </div></div>`;
+  $('#gm_chains').onclick=openChainRegistry;
+  $('#gm_gov').onclick=openGovernance;
+}
 function renderHome(){
   applyOperatorLayout();
-  renderMeta(); renderKpis(); renderWorkflow(); renderAlerts(); renderTiles();
+  renderMeta(); renderKpis(); renderWorkflow(); renderAlerts(); renderGovMeter(); renderTiles();
 }
 
 /* Re-render visible UI after a remote sync update */
@@ -1280,6 +1408,7 @@ function renderRegList(){
     const rec=(DB.reg[CUR.key]||[]).find(x=>String(x._id)===b.dataset.qrid);
     if(rec) showRecordQR(CUR,rec);
   });
+  $('#regBody').querySelectorAll('[data-chain]').forEach(b=>b.onclick=()=>openTruckChain(b.dataset.chain));
 }
 
 function toneBadge(tone,txt,prefix=''){
@@ -1303,6 +1432,8 @@ function recCard(r,rec,i){
   const note = rec.notes? `<div class="note">${esc(rec.notes)}</div>`:'';
   const seq = rec.serial? `#${esc(rec.serial)}` : '';
   const qrBtn = r.qr? `<div class="recact"><button class="qrmini" data-qrid="${esc(rec._id)}">${svg('qr',15)} رمز QR للشاحنة</button></div>`:'';
+  const truck=normTruck(rec.truck);
+  const chainBtn=truck?`<button type="button" class="chain-link" data-chain="${esc(truck)}">${svg('dispatch',14)} سلسلة الشاحنة ${esc(truck)}${chainDotsHtml(truck)}</button>`:'';
   return `<div class="rec" style="animation-delay:${Math.min(i,8)*30}ms">
     <div class="rh">
       <div class="id">${esc(title)} ${seq?`<small>${seq}</small>`:''}</div>
@@ -1310,6 +1441,7 @@ function recCard(r,rec,i){
     </div>
     <div class="kv">${fields}</div>
     ${note}
+    ${chainBtn}
     ${qrBtn}
     <div class="meta">${rec._by?`<span>${svg('user',11)} ${esc(rec._by)}</span>`:''}<span>${svg('cal',11)} ${esc(rec._d||'')}</span></div>
   </div>`;
@@ -1329,10 +1461,12 @@ function renderChecklistList(arr){
         <div style="display:flex;gap:6px;align-items:center;">${toneBadge(tone, yes+' / '+tot)}${rec._t?`<span class="tm">${esc(rec._t)}</span>`:''}</div></div>
       ${rows}
       ${rec.notes?`<div class="note">${esc(rec.notes)}</div>`:''}
+      ${rec.truck?`<button type="button" class="chain-link" data-chain="${esc(rec.truck)}">${svg('dispatch',14)} سلسلة الشاحنة ${esc(rec.truck)}${chainDotsHtml(rec.truck)}</button>`:''}
       <div class="meta"><span>${svg('cal',11)} ${esc(rec.date||rec._d||'')}</span></div>
     </div>`;
   }).join('') : emptyState();
   $('#regBody').innerHTML=`<div class="reclist">${body}</div>`;
+  $('#regBody').querySelectorAll('[data-chain]').forEach(b=>b.onclick=()=>openTruckChain(b.dataset.chain));
 }
 
 /* ============ Sheet / Form ============ */
@@ -1487,8 +1621,10 @@ function saveForm(r){
     } else if(!rec.notifyTime){ const el=$('#f_notifyTime'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('سجّل وقت إبلاغ نائب الرئيس'); return; }
   }
 
+  linkChainOnSave(rec);
   DB.reg[r.key].push(rec); saveReg(r.key);
-  closeSheet(); renderRegList(); toast(rec._override?'حُفظ مع تجاوز موثّق':'تم حفظ السجل');
+  closeSheet(); renderRegList(); renderHome();
+  toast(rec._override?'حُفظ مع تجاوز موثّق':'تم حفظ السجل');
 }
 
 /* Checklist form */
@@ -1513,7 +1649,9 @@ function openChecklistForm(){
     const items=r.items.map((it,i)=>({label:it, ok:$(`[data-ci="${i}"]`).checked}));
     const rec={inspector:$('#f_inspector').value.trim(), truck,
       date:$('#f_date').value, notes:$('#f_notes').value.trim(), items, _t:nowTime(), _d:todayDate(), _id:Date.now()};
-    DB.reg[r.key].push(rec); saveReg(r.key); closeSheet(); renderRegList(); toast('تم حفظ مرحلة الفحص — يمكن التصدير الآن');
+    linkChainOnSave(rec);
+    DB.reg[r.key].push(rec); saveReg(r.key); closeSheet(); renderRegList(); renderHome();
+    toast('تم حفظ مرحلة الفحص — يمكن التصدير الآن');
   };
   openSheet('مرحلة الفحص — قائمة الجودة');
 }
@@ -1831,8 +1969,79 @@ const GOV = [
     ['أي تعديل على نماذج البرنامج أو قواعده يُعتمد من رئيس الفريق ونائبه.','on'],
     ['يُوثَّق رقم الإصدار وتاريخ آخر تعديل للبرنامج.','on'],
     ['البرنامج وثيقة تشغيلية داخلية تُستخدم لأغراض العملية فقط.','on']
+  ]},
+  { t:'ترابط السجلات وسلسلة الشاحنة', rules:[
+    ['كل شاحنة تُربَط برقم واحد عبر السجلات: فحص ← تصدير ← ترحيل ← استقبال.','on'],
+    ['عند الحفظ يُوثَّق ترابط السجل بسلسلة الشاحنة تلقائياً (_links).','on'],
+    ['لوحة الامتثال تعرض نسبة السلاسل المكتملة والفجوات.','on'],
+    ['زر «سلسلة الشاحنة» يعرض كل السجلات المرتبطة في خط زمني واحد.','on'],
+    ['لا يُقبل تخطي مرحلة إلزامية إلا بتجاوز موثّق في سجل الحقائق.','on'],
+    ['المخالفات والمطابقة تُربَط بنفس رقم الشاحنة للتدقيق اللاحق.','on']
   ]}
 ];
+function openTruckChain(truck){
+  truck=normTruck(truck);
+  if(!truck){ toast('لا يوجد رقم شاحنة'); return; }
+  const stages=chainStageStatus(truck);
+  const chain=buildTruckChain(truck);
+  const complete=isChainComplete(truck);
+  const steps=stages.map(s=>{
+    const sum=s.rec?chainSummaryLine(s.rec,REGMAP[s.key]):'لم يُسجَّل بعد';
+    return `<div class="chain-step ${s.tone}">
+      <div class="node">${svg(s.icon,16)}</div>
+      <div class="body"><div class="bl">${esc(s.label)} · <span class="badge ${s.tone==='ok'?'b-ok':(s.tone==='warn'?'b-warn':'b-danger')}">${esc(s.state)}</span></div>
+      <div class="bs">${esc(sum)}${s.rec&&s.rec._by?' · '+esc(s.rec._by):''}${s.rec&&s.rec._d?' · '+esc(s.rec._d):''}</div>
+      ${s.rec?`<button type="button" class="btn btn-ghost" data-goto="${s.key}" style="margin-top:8px;padding:6px 10px;font-size:12px">فتح السجل</button>`:''}
+      </div></div>`;
+  }).join('');
+  let extra='';
+  if(chain.violations&&chain.violations.length){
+    extra+=`<div class="hint" style="margin:10px 0 6px;font-weight:600">مخالفات مرتبطة (${chain.violations.length})</div>`;
+    extra+=chain.violations.slice(0,3).map(v=>`<div class="rline"><span class="k">${esc(v.vioType||'مخالفة')}</span><span class="v">${esc(v.date||v._d||'')}</span></div>`).join('');
+  }
+  if(chain.reconcile){
+    extra+=`<div class="rline" style="margin-top:8px"><span class="k">مطابقة مستقلة</span><span class="v">${esc(chain.reconcile.result||'—')}</span></div>`;
+  }
+  $('#sheetBody').innerHTML=`<div style="margin-bottom:12px">
+    <div style="font-family:'Reem Kufi';font-size:17px;font-weight:600">سلسلة الشاحنة <span class="mono">${esc(truck)}</span></div>
+    <div style="font-size:12px;color:var(--ink2);margin-top:4px">${complete?toneBadge('ok','السلسلة مكتملة'):toneBadge('warn','سلسلة ناقصة — راجع المراحل الحمراء')}</div>
+    ${chainDotsHtml(truck)}</div>
+    <div class="chain-timeline">${steps}</div>${extra}`;
+  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="chClose" style="flex:.6">إغلاق</button>
+    <button class="btn btn-pri" id="chScan">${svg('scan',16)} مسح باركود شاحنة أخرى</button>`;
+  $('#chClose').onclick=closeSheet;
+  $('#chScan').onclick=()=>BarcodeScanner.open(v=>{ closeSheet(); openTruckChain(v); });
+  $('#sheetBody').querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.goto; closeSheet(); openRegister(k);
+    setTimeout(()=>{ FILTER=truck; $('#regSearch').value=truck; renderRegList(); },200);
+  });
+  openSheet('ترابط السجلات — شاحنة '+truck);
+}
+function openChainRegistry(){
+  const g=governanceStats();
+  const rows=g.gaps.length? g.gaps.map(x=>`
+    <button type="button" class="gov-gap" data-chain="${esc(x.truck)}">
+      <span class="mono" style="font-weight:700">${esc(x.truck)}</span>
+      <span style="color:var(--warn);margin-inline-start:auto">ناقص: ${esc(x.missing.join('، '))}</span>
+    </button>`).join('') : `<div class="alert-ok">${svg('quality',16)}<span>كل السلاسل المسجّلة مكتملة.</span></div>`;
+  const okList=allTrucksInChain().filter(isChainComplete).slice(0,8).map(t=>`
+    <button type="button" class="gov-gap" data-chain="${esc(t)}" style="border-color:var(--ok)">
+      <span class="mono" style="font-weight:700">${esc(t)}</span>${chainDotsHtml(t)}
+    </button>`).join('');
+  $('#sheetBody').innerHTML=`<div class="gov-meter" style="margin-bottom:14px">
+    <div class="top"><div style="font-size:13px;font-weight:600">لوحة امتثال الحوكمة</div>
+      <div class="pct ${g.pct>=90?'':(g.pct>=70?'warn':'bad')}">${g.pct}%</div></div>
+    <div class="bar"><i style="width:${g.pct}%"></i></div>
+    <div class="hint" style="margin-top:8px">${g.complete} سلسلة مكتملة · ${g.broken} بها فجوات · ${g.total} شاحنة مسجّلة</div></div>
+    ${g.broken?`<div style="font-size:12px;font-weight:700;color:var(--warn);margin-bottom:8px">سلاسل ناقصة</div>${rows}`:''}
+    ${okList?`<div style="font-size:12px;font-weight:700;color:var(--ok);margin:12px 0 8px">سلاسل مكتملة (عينة)</div>${okList}`:''}`;
+  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="crClose" style="flex:.6">إغلاق</button>
+    <button class="btn btn-pri" id="crGov">${svg('gov',16)} حوكمة البرنامج</button>`;
+  $('#crClose').onclick=closeSheet;
+  $('#crGov').onclick=()=>{ closeSheet(); openGovernance(); };
+  $('#sheetBody').querySelectorAll('[data-chain]').forEach(b=>b.onclick=()=>openTruckChain(b.dataset.chain));
+  openSheet('سلاسل الشاحنات والترابط');
+}
 function openGovernance(){
   const tag = s=> s==='on'
     ? '<span class="badge b-ok tag">مُفعَّل</span>'
@@ -1843,7 +2052,16 @@ function openGovernance(){
       <div class="gh"><div class="num">${i+1}</div><div class="gt">${esc(s.t)}</div></div>
       ${s.rules.map(r=>`<div class="govrule"><span class="dot"></span><span class="rt">${esc(r[0])}</span>${tag(r[1])}</div>`).join('')}
     </div>`).join('');
+  const g=governanceStats();
+  const gcls=g.pct>=90?'':(g.pct>=70?' warn':' bad');
   $('#govBody').innerHTML = `
+    <div class="gov-meter" style="margin-bottom:14px">
+      <div class="top"><div><div style="font-size:13px;font-weight:600">امتثال ترابط السجلات</div>
+        <div class="hint" style="margin-top:4px">فحص → تصدير → ترحيل → استقبال لكل شاحنة</div></div>
+        <div class="pct${gcls}">${g.pct}%</div></div>
+      <div class="bar"><i style="width:${g.pct}%"></i></div>
+      <button class="btn btn-pri" id="govChains" style="width:100%;margin-top:10px;justify-content:center">عرض سلاسل الشاحنات</button>
+    </div>
     <div class="gov-intro">
       <b>قواعد حوكمة برنامج تفريغ باخرة القمح السائب.</b> مشتقّة من الخطة التشغيلية المعتمدة، وتضبط طريقة استخدام البرنامج وسلامة بياناته. تُعتمد من رئيس الفريق ونائبه.
       <div class="gov-leg">
@@ -1853,6 +2071,7 @@ function openGovernance(){
     </div>
     ${secs}
     <div class="footnote" style="padding-top:8px">وثيقة تشغيلية داخلية — حوكمة البرنامج · ${esc(DB.meta.ship||'')}</div>`;
+  const gc=$('#govChains'); if(gc) gc.onclick=()=>openChainRegistry();
   show('gov');
 }
 
