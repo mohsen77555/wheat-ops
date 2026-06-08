@@ -276,6 +276,21 @@
   @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .hidden{display:none!important;}
 
+  /* ---- Sub-screens as popups (over home) ---- */
+  .subscrim{position:fixed;inset:0;background:rgba(15,20,28,.45);z-index:44;opacity:0;pointer-events:none;transition:.2s;}
+  .subscrim.on{opacity:1;pointer-events:auto;}
+  .subview-on{
+    position:fixed;top:0;bottom:0;left:0;right:0;max-width:560px;margin:0 auto;z-index:45;
+    background:var(--paper2);
+    overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    box-shadow:var(--shadow-lg);
+    animation:popIn .26s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes popIn{from{opacity:0;transform:translateY(14px) scale(.985);}to{opacity:1;transform:none;}}
+  @media (min-width:680px){
+    .subview-on{max-width:620px;border-radius:16px;top:2.5vh;bottom:2.5vh;box-shadow:var(--shadow-lg);}
+  }
+
   /* QR */
   .recact{margin-top:10px;display:flex;gap:8px;}
   .qrmini{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy2);background:var(--paper);border:1px solid var(--line2);border-radius:9px;padding:7px 12px;}
@@ -361,6 +376,20 @@
   </div>
 </div>
 
+<div id="loginGate" class="hidden" style="position:fixed;inset:0;z-index:80;background:linear-gradient(180deg,var(--navy),#0e2030);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;">
+  <div style="width:100%;max-width:360px;background:var(--paper2);border-radius:18px;border-top:3px solid var(--wheat);box-shadow:var(--shadow-lg);padding:22px;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-family:'Reem Kufi';font-size:19px;font-weight:600;color:var(--ink)">تسجيل الدخول</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">نظام تفريغ باخرة القمح السائب</div>
+    </div>
+    <div class="field"><label>اسم المستخدم</label><input id="lg_user" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
+    <div class="field"><label>كلمة السر</label><input id="lg_pass" type="password" autocomplete="current-password"></div>
+    <div id="lg_err" style="color:var(--danger);font-size:12.5px;min-height:18px;margin-bottom:4px"></div>
+    <button class="btn btn-pri" id="lg_btn" style="width:100%;justify-content:center">دخول</button>
+    <div id="lg_hint" class="hint" style="text-align:center;margin-top:12px"></div>
+  </div>
+</div>
+<div class="subscrim" id="subscrim"></div>
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet">
   <div class="grip"></div>
@@ -639,10 +668,10 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.2.3';
+const APP_VERSION='1.3.0';
 
 /* ============ State ============ */
-const DB = { meta:{}, reg:{}, handovers:[] };
+const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null };
 const DEFAULT_META = { ship:'INCE INEBOLU', port:'الصليف', startDate:'', shift:'الوردية الأولى', operator:'', role:'', hoppers:'', approvedBy:'' };
 
 async function loadAll(){
@@ -652,14 +681,55 @@ async function loadAll(){
     DB.reg[r.key] = (await Store.get('reg:'+r.key)) || [];
   }
   DB.handovers = (await Store.get('handovers')) || [];
+  DB.users = (await Store.get('users')) || [];
+  DB.sessionUser = await Store.get('session');
+  await ensureSeedAdmin();
 }
 async function saveMeta(){ await Store.set('meta', DB.meta); }
 async function saveReg(key){ await Store.set('reg:'+key, DB.reg[key]); }
 async function saveHandovers(){ await Store.set('handovers', DB.handovers); }
+async function saveUsers(){ await Store.set('users', DB.users); }
+
+/* ============ Users / Auth ============ */
+async function hashPass(s){
+  s=String(s);
+  try{
+    if(typeof crypto!=='undefined' && crypto.subtle){
+      const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+      return 'sha256:'+Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){}
+  let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h)+s.charCodeAt(i); h|=0; }
+  return 'djb2:'+(h>>>0).toString(16);
+}
+async function verifyPass(s,stored){ return (await hashPass(s))===stored; }
+async function ensureSeedAdmin(){
+  if(!Array.isArray(DB.users)) DB.users=[];
+  if(DB.users.length===0){
+    DB.users.push({ id:Date.now(), name:'المسؤول', username:'admin', role:'رئيس الفريق',
+      pass:await hashPass('admin'), active:true, mustChange:true, _t:nowTime(), _d:todayDate(), _by:'النظام' });
+    await saveUsers();
+  }
+}
+function findUser(username){
+  const u=(username||'').trim().toLowerCase();
+  return DB.users.find(x=>(x.username||'').toLowerCase()===u);
+}
+function currentUser(){
+  if(!DB.sessionUser) return null;
+  const u=findUser(DB.sessionUser);
+  return (u && u.active!==false)? u : null;
+}
+function currentRole(){ const u=currentUser(); return u? (u.role||'') : (DB.meta.role||''); }
+function isAdmin(){ const u=currentUser(); return u? SUPER.includes(u.role) : true; }
+function applySession(){
+  const u=currentUser();
+  if(u){ DB.meta.operator=u.name||u.username; DB.meta.role=u.role||''; }
+}
 
 /* ============ Governance enforcement ============ */
 function canAccess(r){
-  const role=DB.meta.role||'';
+  const role=currentRole();
   if(!role) return true;                 // role not set → full access (configure per device)
   if(SUPER.includes(role)) return true;  // supervisors: full access
   return (r.roles||[]).includes(role);
@@ -755,14 +825,28 @@ function renderTiles(){
 
 function renderHome(){ renderMeta(); renderKpis(); renderTiles(); }
 
-/* ============ Navigation ============ */
-function show(view){
-  ['home','reg','handover','gov'].forEach(v=>$('#view-'+v).classList.toggle('hidden', v!==view));
-  window.scrollTo(0,0);
+/* ============ Navigation (sub-screens open as popups over home) ============ */
+const SUBVIEWS={reg:'#view-reg',handover:'#view-handover',gov:'#view-gov'};
+function closeSub(){
+  Object.values(SUBVIEWS).forEach(s=>{ const el=$(s); el.classList.add('hidden'); el.classList.remove('subview-on'); });
+  $('#subscrim').classList.remove('on');
+  document.body.style.overflow='';
 }
-$('#regBack').onclick=()=>{ renderHome(); show('home'); };
-$('#hoBack').onclick=()=>{ renderHome(); show('home'); };
-$('#govBack').onclick=()=>{ renderHome(); show('home'); };
+function show(view){
+  if(view==='home'){ closeSub(); return; }
+  // home stays mounted underneath; the target opens as a popup overlay
+  Object.entries(SUBVIEWS).forEach(([k,s])=>{
+    const el=$(s);
+    if(k===view){ el.classList.remove('hidden'); el.classList.add('subview-on'); el.scrollTop=0; }
+    else{ el.classList.add('hidden'); el.classList.remove('subview-on'); }
+  });
+  $('#subscrim').classList.add('on');
+  document.body.style.overflow='hidden';   // lock background scroll
+}
+$('#subscrim').onclick=()=>show('home');
+$('#regBack').onclick=()=>{ show('home'); renderHome(); };
+$('#hoBack').onclick=()=>{ show('home'); renderHome(); };
+$('#govBack').onclick=()=>{ show('home'); renderHome(); };
 
 /* ============ Register view ============ */
 let CUR=null, FILTER='';
@@ -963,21 +1047,23 @@ function openChecklistForm(){
 /* ============ Settings ============ */
 function openSettings(){
   const m=DB.meta;
+  const cu=currentUser();
   $('#sheetBody').innerHTML=`
+    <div class="setgrp"><div class="gh">الحساب والمستخدمون</div><div style="padding:12px 14px 14px">
+      <div class="hint" style="margin-bottom:10px">${cu?('المستخدم الحالي: <b style="color:var(--ink)">'+esc(cu.name||cu.username)+'</b> · الدور: '+esc(cu.role||'—')):'لم يتم تسجيل الدخول'}</div>
+      ${isAdmin()?'<button class="btn btn-ghost" id="s_users" style="width:100%;margin-bottom:9px;justify-content:center">إدارة المستخدمين والصلاحيات</button>':''}
+      <button class="btn btn-ghost" id="s_logout" style="width:100%;justify-content:center">تسجيل الخروج</button>
+    </div></div>
     <div class="setgrp"><div class="gh">بيانات العملية</div><div style="padding:12px 14px 2px">
       <div class="field"><label>اسم الباخرة</label><input id="s_ship" value="${esc(m.ship)}"></div>
       <div class="field"><label>موقع التفريغ</label><input id="s_port" value="${esc(m.port)}"></div>
       <div class="field"><label>تاريخ بدء العملية</label><input id="s_date" type="date" value="${esc(m.startDate)}"></div>
     </div></div>
-    <div class="setgrp"><div class="gh">الوردية الحالية</div><div style="padding:12px 14px 2px">
-      <div class="field"><label>الوردية</label><select id="s_shift">
+    <div class="setgrp"><div class="gh">الوردية الحالية</div><div style="padding:12px 14px 14px">
+      <div class="field" style="margin-bottom:0"><label>الوردية</label><select id="s_shift">
         ${['الوردية الأولى','الوردية الثانية','الوردية الثالثة','صباحية','مسائية','ليلية'].map(o=>`<option ${o===m.shift?'selected':''}>${o}</option>`).join('')}
       </select></div>
-      <div class="field"><label>المسؤول المناوب</label><input id="s_op" value="${esc(m.operator)}" placeholder="اسم مدير العمليات المناوب"></div>
-      <div class="field"><label>دور هذا الجهاز (الصلاحيات)</label><select id="s_role">
-        <option value="">وصول كامل (غير محدد)</option>
-        ${ALL_ROLES.map(o=>`<option ${o===m.role?'selected':''}>${o}</option>`).join('')}
-      </select><div class="hint">يحدد السجلات المسموح الإدخال فيها من هذا الجهاز. المشرفون لهم وصول كامل.</div></div>
+      <div class="hint" style="margin-top:8px">المسؤول والدور (الصلاحيات) يأتيان من حساب الدخول. لتغييرهما استخدم «إدارة المستخدمين».</div>
     </div></div>
     <div class="setgrp"><div class="gh">ضوابط التشغيل</div><div style="padding:12px 14px 14px">
       <div class="field"><label>الهوبر المعتمد (أرقام مفصولة بفواصل)</label><input id="s_hop" value="${esc(m.hoppers)}" placeholder="مثال: 1، 2، 3">
@@ -1002,10 +1088,13 @@ function openSettings(){
   $('#setCancel').onclick=closeSheet;
   $('#setSave').onclick=()=>{
     DB.meta.ship=$('#s_ship').value.trim()||'—'; DB.meta.port=$('#s_port').value.trim()||'—';
-    DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value; DB.meta.operator=$('#s_op').value.trim();
-    DB.meta.role=$('#s_role').value; DB.meta.hoppers=$('#s_hop').value.trim(); DB.meta.approvedBy=$('#s_appr').value.trim();
+    DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value;
+    DB.meta.hoppers=$('#s_hop').value.trim(); DB.meta.approvedBy=$('#s_appr').value.trim();
+    applySession();  // keep operator/role from the logged-in account
     saveMeta(); closeSheet(); renderHome(); toast('تم حفظ الإعدادات');
   };
+  const su=$('#s_users'); if(su) su.onclick=openUsers;
+  $('#s_logout').onclick=doLogout;
   const backendName=b=>({localStorage:'محفوظ على الجهاز (localStorage)',preferences:'محفوظ على الجهاز (تخزين أندرويد)','window.storage':'تخزين خارجي',memory:'مؤقت فقط — لن يُحفظ!'}[b]||b);
   (async()=>{ const el=$('#s_storage'); if(!el) return; const r=await Store.selfTest(); el.innerHTML='حالة التخزين: <b style="color:'+(r.ok?'var(--ok)':'var(--danger)')+'">'+(r.ok?'يعمل ✓':'لا يعمل ✗')+'</b> — '+esc(backendName(r.backend)); })();
   $('#s_selftest').onclick=async()=>{
@@ -1246,6 +1335,100 @@ function openGovernance(){
   show('gov');
 }
 
+/* ============ Login gate ============ */
+function openLogin(){
+  const gate=$('#loginGate'); if(!gate) return;
+  $('#lg_user').value=''; $('#lg_pass').value=''; $('#lg_err').textContent='';
+  const admin=DB.users.find(u=>u.username==='admin');
+  $('#lg_hint').innerHTML = (admin && admin.mustChange)
+    ? 'أول تشغيل: ادخل باسم <b>admin</b> وكلمة السر <b>admin</b> ثم غيّرها فوراً من «المستخدمون».'
+    : 'أدخل بيانات حسابك. للمساعدة راجع مسؤول النظام.';
+  gate.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>$('#lg_user').focus(),60);
+}
+function closeLogin(){ $('#loginGate').classList.add('hidden'); document.body.style.overflow=''; }
+async function doLogin(){
+  const uname=$('#lg_user').value.trim(), pass=$('#lg_pass').value;
+  const err=$('#lg_err');
+  const u=findUser(uname);
+  if(!u){ err.textContent='اسم المستخدم غير موجود'; return; }
+  if(u.active===false){ err.textContent='الحساب موقوف. راجع مسؤول النظام.'; return; }
+  if(!(await verifyPass(pass, u.pass))){ err.textContent='كلمة السر غير صحيحة'; return; }
+  DB.sessionUser=u.username; await Store.set('session', u.username);
+  applySession(); closeLogin(); show('home'); renderHome();
+  toast('مرحباً '+(u.name||u.username));
+}
+$('#lg_btn').onclick=doLogin;
+$('#lg_pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+async function doLogout(){
+  DB.sessionUser=null; await Store.set('session', null);
+  closeSheet(); show('home'); openLogin();
+}
+
+/* ============ User management (admins/supervisors) ============ */
+function openUsers(){
+  if(!isAdmin()){ toast('إدارة المستخدمين متاحة للمشرفين فقط'); return; }
+  const rows = DB.users.map(u=>`
+    <button class="rec" data-uid="${esc(u.id)}" style="text-align:right;width:100%;display:block;cursor:pointer">
+      <div class="rh">
+        <div class="id">${esc(u.name||u.username)} <small>@${esc(u.username)}</small></div>
+        ${u.active===false?toneBadge('danger','موقوف'):toneBadge('ok','نشط')}
+      </div>
+      <div class="kv one"><div class="f"><span class="k">الصلاحية / الدور</span><span class="v">${esc(u.role||'—')}</span></div></div>
+    </button>`).join('');
+  $('#sheetBody').innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">${rows||'<div class="empty"><p>لا يوجد مستخدمون.</p></div>'}</div>`;
+  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="usrClose" style="flex:.6">إغلاق</button><button class="btn btn-pri" id="usrAdd">+ مستخدم جديد</button>`;
+  $('#usrClose').onclick=closeSheet;
+  $('#usrAdd').onclick=()=>openUserForm(null);
+  $('#sheetBody').querySelectorAll('[data-uid]').forEach(b=>b.onclick=()=>{
+    const u=DB.users.find(x=>String(x.id)===b.dataset.uid); if(u) openUserForm(u);
+  });
+  openSheet('المستخدمون والصلاحيات');
+}
+function openUserForm(u){
+  const isEdit=!!u;
+  $('#sheetBody').innerHTML=`
+    <div class="field"><label>الاسم الكامل <span class="req">*</span></label><input id="u_name" value="${esc(u?u.name:'')}"></div>
+    <div class="field"><label>اسم المستخدم (للدخول) <span class="req">*</span></label>
+      <input id="u_username" autocapitalize="none" spellcheck="false" value="${esc(u?u.username:'')}" ${isEdit?'disabled style="opacity:.6"':''}></div>
+    <div class="field"><label>الصلاحية / الدور <span class="req">*</span></label>
+      <select id="u_role">${ALL_ROLES.map(r=>`<option ${u&&u.role===r?'selected':''}>${esc(r)}</option>`).join('')}</select>
+      <div class="hint">المشرفون (${esc(SUPER.join('، '))}) لهم وصول كامل وإدارة المستخدمين.</div></div>
+    <div class="field"><label>كلمة السر ${isEdit?'(اتركها فارغة للإبقاء على الحالية)':'<span class="req">*</span>'}</label>
+      <input id="u_pass" type="text" autocomplete="new-password" placeholder="${isEdit?'•••••• (دون تغيير)':'كلمة السر'}"></div>
+    <label class="check"><input type="checkbox" id="u_active" ${(!u||u.active!==false)?'checked':''}><span>الحساب نشط (يسمح بالدخول)</span></label>`;
+  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="uCancel" style="flex:.6">رجوع</button>
+    ${isEdit?'<button class="btn" id="uDel" style="background:var(--danger-bg);color:var(--danger)">حذف</button>':''}
+    <button class="btn btn-pri" id="uSave">حفظ</button>`;
+  $('#uCancel').onclick=openUsers;
+  if(isEdit) $('#uDel').onclick=async()=>{
+    if(u.username==='admin'){ toast('لا يمكن حذف حساب admin الأساسي'); return; }
+    if(currentUser() && currentUser().id===u.id){ toast('لا يمكنك حذف حسابك الحالي'); return; }
+    if(!confirm('حذف المستخدم «'+(u.name||u.username)+'»؟')) return;
+    DB.users=DB.users.filter(x=>x.id!==u.id); await saveUsers(); openUsers(); toast('تم حذف المستخدم');
+  };
+  $('#uSave').onclick=async()=>{
+    const name=$('#u_name').value.trim(), uname=$('#u_username').value.trim().toLowerCase();
+    const role=$('#u_role').value, pass=$('#u_pass').value, active=$('#u_active').checked;
+    if(!name){ toast('أدخل الاسم الكامل'); return; }
+    if(!isEdit){
+      if(!uname){ toast('أدخل اسم المستخدم'); return; }
+      if(findUser(uname)){ toast('اسم المستخدم مستخدم مسبقاً'); return; }
+      if(!pass){ toast('أدخل كلمة السر'); return; }
+      DB.users.push({ id:Date.now(), name, username:uname, role, pass:await hashPass(pass), active,
+        _t:nowTime(), _d:todayDate(), _by:(currentUser()?currentUser().name:'') });
+    } else {
+      u.name=name; u.role=role; u.active=active; u.mustChange=false;
+      if(pass) u.pass=await hashPass(pass);
+    }
+    await saveUsers();
+    if(currentUser()) applySession();
+    openUsers(); renderHome(); toast('تم حفظ المستخدم');
+  };
+  openSheet(isEdit?'تعديل مستخدم':'مستخدم جديد');
+}
+
 /* ============ Native (Capacitor) integration ============ */
 /* When running inside the Android app, tint the system status bar to match the
    navy command bar and disable web overscroll. Safe no-op in a normal browser. */
@@ -1279,6 +1462,8 @@ if(window.Capacitor){ initNative(); }
   await loadAll();
   if(!DB.meta.startDate){ DB.meta.startDate=todayDate(); }
   renderHome();
+  if(currentUser()){ applySession(); renderHome(); }
+  else { openLogin(); }
 })();
 </script>
 </body>
