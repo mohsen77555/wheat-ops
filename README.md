@@ -27,7 +27,7 @@ scripts/gen-icons.mjs Rasterizes resources/*.svg into PNG icons
 ## Install directly on your phone (ready-made APK)
 
 A ready-to-install debug APK is published in this repo:
-[`dist/wheat-ops-1.4.0.apk`](dist/wheat-ops-1.4.0.apk).
+[`dist/wheat-ops-1.5.0.apk`](dist/wheat-ops-1.5.0.apk).
 
 **First login:** username `admin`, password `admin` — then change it / add your team
 from Settings → "إدارة المستخدمين والصلاحيات".
@@ -37,14 +37,27 @@ from Settings → "إدارة المستخدمين والصلاحيات".
 The app is fully usable offline on a single device. To make edits on one phone
 appear on the others in real time, enable Cloud Sync (Settings → "المزامنة بين الأجهزة"):
 
-1. Create a free Firebase project, then add a **Realtime Database** (start in test mode).
+1. Create a free Firebase project, then add a **Realtime Database**.
 2. Copy the database URL (e.g. `https://xxxx-default-rtdb.firebaseio.com`).
 3. On every device, paste the **same URL** and the **same team code**, then enable sync.
-   (Use the "QR للمشاركة" button to copy the URL + team code to the other devices.)
+   (Use the "QR للمشاركة" button to copy the whole config to the other devices.)
 
-Records are append-only and merged by id, so concurrent edits never lose data.
-Sync needs internet; offline changes are merged once back online. For production,
-tighten the Realtime Database security rules (e.g. require auth) instead of test mode.
+**Secured mode (recommended) — full authentication:**
+
+1. In Firebase → **Authentication**, enable **Email/Password** and create one sync account.
+2. Set the Realtime Database rules to require auth:
+
+```json
+{ "rules": { ".read": "auth != null", ".write": "auth != null" } }
+```
+
+3. In the app's sync settings also fill the **Web API Key** and the sync account
+   **email + password**. The app signs in (Firebase Auth REST), uses the ID token
+   for all database access, and refreshes it automatically.
+
+Leaving the auth fields empty uses open "test mode" (not secured). Records are
+append-only and merged by id, so concurrent edits never lose data. Sync needs
+internet; offline changes merge once back online.
 
 On the phone:
 
