@@ -1027,7 +1027,7 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.8.0';
+const APP_VERSION='1.8.1';
 const DEFAULT_PREFS={
   weightToleranceKg:50, dailySpendCap:0, shiftSpendCap:0, darkMode:false, gloveMode:false,
   appPinHash:'', mandatoryBarcodeExport:true, deputyReadOnly:true, retentionDays:90,
@@ -2167,12 +2167,14 @@ function openSettings(){
   $('#setCancel').onclick=closeSheet;
   $('#s_logout').onclick=doLogout;
   if(adminOnly){
-  $('#setSave').onclick=()=>{
+  $('#setSave').onclick=async()=>{
     DB.meta.ship=$('#s_ship').value.trim()||'—'; DB.meta.port=$('#s_port').value.trim()||'—';
     DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value;
     DB.meta.hoppers=$('#s_hop').value.trim(); DB.meta.approvedBy=$('#s_appr').value.trim();
     const cl=$('#s_checklist').value.trim().split(/\n/).map(s=>s.trim()).filter(Boolean);
     const pin=$('#s_pin').value.trim();
+    let appPinHash=prefs().appPinHash;
+    if(pin) appPinHash=await hashPass(pin);
     const p=Object.assign({}, prefs(), {
       weightToleranceKg:Number($('#s_wtol').value)||50, retentionDays:Number($('#s_ret').value)||0,
       dailySpendCap:Number($('#s_capd').value)||0, shiftSpendCap:Number($('#s_caps').value)||0,
@@ -2180,8 +2182,7 @@ function openSettings(){
       deputyReadOnly:$('#s_deputyro').checked, mandatoryOperatorSync:$('#s_opsync').checked,
       partialSync:$('#s_partial').checked, darkMode:$('#s_dark').checked, gloveMode:$('#s_glove').checked,
       alertVibrate:$('#s_alertv').checked, alertSound:$('#s_alerts').checked,
-      checklistItems:cl.length?cl:null,
-      appPinHash:pin?await hashPass(pin):prefs().appPinHash
+      checklistItems:cl.length?cl:null, appPinHash
     });
     DB.meta.prefs=p; applyPrefs();
     applySession();
@@ -2590,14 +2591,14 @@ function barcodePlugin(){
     return (C && C.Plugins && C.Plugins.BarcodeScanner) ? C.Plugins.BarcodeScanner : null;
   }catch(e){ return null; }
 }
-function isNativeApp(){
+function capacitorNative(){
   try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }
   catch(e){ return false; }
 }
 const BarcodeScanner = {
   _stream:null, _timer:null, _active:false,
   async ensureNativeReady(BS){
-    if(!BS || !isNativeApp()) return true;
+    if(!BS || !capacitorNative()) return true;
     try{
       if(window.Capacitor.getPlatform()!=='android') return true;
       if(!BS.isGoogleBarcodeScannerModuleAvailable) return true;
@@ -2613,7 +2614,7 @@ const BarcodeScanner = {
   },
   async nativeScan(){
     const BS=barcodePlugin();
-    if(!BS || !isNativeApp()) return null;
+    if(!BS || !capacitorNative()) return null;
     try{
       const sup=await BS.isSupported();
       if(sup && sup.supported===false) return null;
@@ -3082,10 +3083,12 @@ function showPinGate(){
   $('#pin_input').value=''; $('#pin_err').textContent='';
   setTimeout(()=>$('#pin_input').focus(),60);
 }
-$('#pin_unlock').onclick=checkPin;
-$('#pin_input').addEventListener('keydown',e=>{ if(e.key==='Enter') checkPin(); });
-$('#globalSearchBtn').onclick=openGlobalSearch;
-$('#newTruckBtn').onclick=openNewTruckFlow;
+const _pinUnlock=$('#pin_unlock'), _pinInput=$('#pin_input');
+if(_pinUnlock) _pinUnlock.onclick=checkPin;
+if(_pinInput) _pinInput.addEventListener('keydown',e=>{ if(e.key==='Enter') checkPin(); });
+const _gsBtn=$('#globalSearchBtn'), _ntBtn=$('#newTruckBtn');
+if(_gsBtn) _gsBtn.onclick=openGlobalSearch;
+if(_ntBtn) _ntBtn.onclick=openNewTruckFlow;
 
 /* ============ Native (Capacitor) integration ============ */
 /* When running inside the Android app, tint the system status bar to match the
