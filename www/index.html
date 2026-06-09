@@ -18,6 +18,23 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <script>
+/* Boot guard: if main app script fails to parse/run, show a clear recovery screen */
+window.__WO_READY=false;
+document.addEventListener('DOMContentLoaded',function(){
+  setTimeout(function(){
+    if(window.__WO_READY) return;
+    if(document.getElementById('__boot_fail')) return;
+    var d=document.createElement('div'); d.id='__boot_fail';
+    d.style.cssText='position:fixed;inset:0;z-index:99999;background:#142C40;color:#F3ECDD;padding:22px;direction:rtl;text-align:right;overflow:auto;font:15px/1.7 sans-serif';
+    d.innerHTML='<div style="font-size:18px;font-weight:700;color:#F2DEAE;margin-bottom:10px">تعذّر تشغيل التطبيق</div>'
+      +'<p>النسخة القديمة <b>1.8.0</b> تحتوي خطأً يمنع الأزرار من العمل.</p>'
+      +'<p><b>الحل:</b> احذف التطبيق وثبّت <b>1.8.2</b> من الرابط الرسمي، أو من الإعدادات امسح بيانات التطبيق (Clear storage) ثم أعد الفتح.</p>'
+      +'<p style="opacity:.8;font-size:13px">إن ظهرت هذه الرسالة بعد تثبيت 1.8.2، أعد تشغيل الهاتف وحاول مجدداً.</p>';
+    document.body.appendChild(d);
+  }, 1500);
+});
+</script>
+<script>
 /* QR generator: try local bundled file first (offline/APK); fall back to CDN
    if the local file is missing OR present but doesn't define QRCode. */
 (function(){
@@ -423,7 +440,7 @@
       <div class="row">
         <div class="brand">
           <div class="t">تفريغ باخرة قمح سائب</div>
-          <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b> · <span id="tb-ver" style="opacity:.85"></span></div>
+          <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b> · <span id="tb-ver" style="opacity:.85">إصدار 1.8.2</span></div>
         </div>
         <button class="iconbtn" id="globalSearchBtn" title="بحث شاحنة">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
@@ -1027,7 +1044,21 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.8.1';
+const APP_VERSION='1.8.2';
+function safeOn(sel, fn){ const el=$(sel); if(el) el.onclick=fn; return el; }
+function resetOverlays(){
+  ['loginGate','deviceSetupGate','pinGate'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('hidden'); });
+  document.body.style.overflow='';
+  const ss=$('#subscrim'); if(ss) ss.classList.remove('on');
+  const sc=$('#scrim'); if(sc) sc.classList.remove('on');
+}
+function ensureHomeInteractive(){
+  const tiles=$('#tiles'), kpis=$('#kpis');
+  if((tiles&&tiles.innerHTML)||(kpis&&kpis.innerHTML)) return;
+  if(!DB.deviceSetup||!DB.deviceSetup.configured){ openDeviceSetup(); return; }
+  if(!currentUser()){ openLogin(); return; }
+  try{ renderHome(); }catch(e){}
+}
 const DEFAULT_PREFS={
   weightToleranceKg:50, dailySpendCap:0, shiftSpendCap:0, darkMode:false, gloveMode:false,
   appPinHash:'', mandatoryBarcodeExport:true, deputyReadOnly:true, retentionDays:90,
@@ -1526,11 +1557,19 @@ function maybeAlertChainGaps(){
   }catch(e){} }
 }
 function renderHome(){
-  applyOperatorLayout();
-  const nt=$('#newTruckBtn');
-  if(nt) nt.style.display=(canAccess(REGMAP.checklist)||canAccess(REGMAP.export))?'':'none';
-  renderMeta(); renderSuperDash(); renderKpis(); renderWorkflow(); renderAlerts(); renderGovMeter(); renderTiles();
-  maybeAlertChainGaps();
+  try{
+    applyOperatorLayout();
+    const nt=$('#newTruckBtn');
+    if(nt) nt.style.display=(canAccess(REGMAP.checklist)||canAccess(REGMAP.export))?'':'none';
+    renderMeta();
+    try{ renderSuperDash(); }catch(e){}
+    try{ renderKpis(); }catch(e){}
+    try{ renderWorkflow(); }catch(e){}
+    try{ renderAlerts(); }catch(e){}
+    try{ renderGovMeter(); }catch(e){}
+    try{ renderTiles(); }catch(e){}
+    try{ maybeAlertChainGaps(); }catch(e){}
+  }catch(e){ console.error(e); }
 }
 
 /* Re-render visible UI after a remote sync update */
@@ -1560,13 +1599,13 @@ function show(view){
   $('#subscrim').classList.add('on');
   document.body.style.overflow='hidden';   // lock background scroll
 }
-$('#subscrim').onclick=()=>show('home');
-$('#regBack').onclick=()=>{
+safeOn('#subscrim', ()=>show('home'));
+safeOn('#regBack', ()=>{
   if(isOperatorView()){ show('home'); renderHome(); return; }
   show('home'); renderHome();
-};
-$('#hoBack').onclick=()=>{ show('home'); renderHome(); };
-$('#govBack').onclick=()=>{ show('home'); renderHome(); };
+});
+safeOn('#hoBack', ()=>{ show('home'); renderHome(); });
+safeOn('#govBack', ()=>{ show('home'); renderHome(); });
 
 /* ============ Register view ============ */
 let CUR=null, FILTER='';
@@ -1675,9 +1714,10 @@ function renderChecklistList(arr){
 
 /* ============ Sheet / Form ============ */
 const scrim=$('#scrim'), sheet=$('#sheet');
-function openSheet(title){ $('#sheetTitle').textContent=title; scrim.classList.add('on'); sheet.classList.add('on'); }
-function closeSheet(){ scrim.classList.remove('on'); sheet.classList.remove('on'); }
-scrim.onclick=closeSheet; $('#sheetClose').onclick=closeSheet;
+function openSheet(title){ const t=$('#sheetTitle'); if(t) t.textContent=title; if(scrim) scrim.classList.add('on'); if(sheet) sheet.classList.add('on'); }
+function closeSheet(){ if(scrim) scrim.classList.remove('on'); if(sheet) sheet.classList.remove('on'); }
+if(scrim) scrim.onclick=closeSheet;
+safeOn('#sheetClose', closeSheet);
 
 const PhotoCapture={
   async pick(){
@@ -2231,7 +2271,7 @@ function openSettings(){
   } /* end adminOnly */
   openSheet('الإعدادات');
 }
-$('#openSettings').onclick=openSettings;
+safeOn('#openSettings', openSettings);
 
 /* ============ CSV export ============ */
 function downloadCsv(name, rows){
@@ -2718,8 +2758,8 @@ async function configureDevice(mode){
   }
   closeDeviceSetup(); await openLogin();
 }
-$('#setup_admin').onclick=()=>configureDevice('admin');
-$('#setup_operator').onclick=()=>configureDevice('operator');
+safeOn('#setup_admin', ()=>configureDevice('admin'));
+safeOn('#setup_operator', ()=>configureDevice('operator'));
 
 /* ============ User provisioning (QR) ============ */
 function userProvisionPayload(u){
@@ -2824,9 +2864,9 @@ async function doLogin(){
   if(u.mustChange){ openChangePassword(u); return; }
   goToRoleHome(u);
 }
-$('#lg_btn').onclick=doLogin;
-$('#lg_pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
-$('#lg_scan_user').onclick=scanUserProvision;
+safeOn('#lg_btn', doLogin);
+const _lgPass=$('#lg_pass'); if(_lgPass) _lgPass.addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+safeOn('#lg_scan_user', scanUserProvision);
 async function doLogout(){
   DB.sessionUser=null; await Store.set('session', null);
   closeSheet(); show('home'); openLogin();
@@ -3120,20 +3160,31 @@ if('serviceWorker' in navigator && !isNativeApp && (location.protocol==='http:' 
 document.addEventListener('deviceready', initNative, false);
 if(window.Capacitor){ initNative(); }
 (async function init(){
-  await loadAll();
-  if(!DB.meta.startDate){ DB.meta.startDate=todayDate(); }
-  try{ Sync.load(); if(Sync.active()){ Sync.start(); if(isOperatorDevice() && !currentUser()) await Sync.pullUsers(); } }catch(e){}
-  await archiveOldRecords();
-  await maybeDailyBackup();
-  if(needsPinUnlock()){ showPinGate(); return; }
-  if(currentUser()){
-    applySession(); applyOperatorLayout();
-    const u=currentUser();
-    if(u && u.mustChange){ openChangePassword(u); return; }
-    if(u && !isSupervisorRole(u.role) && ROLE_PRIMARY[u.role]) goToRoleHome(u);
-    else renderHome();
-  } else if(!DB.deviceSetup || !DB.deviceSetup.configured){ openDeviceSetup(); }
-  else { await openLogin(); }
+  try{
+    resetOverlays();
+    await loadAll();
+    if(!DB.meta.startDate){ DB.meta.startDate=todayDate(); }
+    try{ Sync.load(); if(Sync.active()){ Sync.start(); if(isOperatorDevice() && !currentUser()) await Sync.pullUsers(); } }catch(e){}
+    try{ await archiveOldRecords(); }catch(e){}
+    try{ await maybeDailyBackup(); }catch(e){}
+    if(needsPinUnlock()){ showPinGate(); window.__WO_READY=true; return; }
+    if(currentUser()){
+      applySession(); applyOperatorLayout();
+      const u=currentUser();
+      if(u && u.mustChange){ openChangePassword(u); window.__WO_READY=true; return; }
+      if(u && !isSupervisorRole(u.role) && ROLE_PRIMARY[u.role]) goToRoleHome(u);
+      else renderHome();
+    } else if(!DB.deviceSetup || !DB.deviceSetup.configured){ openDeviceSetup(); }
+    else { await openLogin(); }
+    ensureHomeInteractive();
+    window.__WO_READY=true;
+    const bf=document.getElementById('__boot_fail'); if(bf) bf.remove();
+  }catch(e){
+    console.error(e);
+    try{ ensureHomeInteractive(); }catch(_){}
+    window.__WO_READY=true;
+    toast('خطأ تشغيل — أعد فتح التطبيق');
+  }
 })();
 </script>
 </body>
