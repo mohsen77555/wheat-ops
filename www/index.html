@@ -18,6 +18,23 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <script>
+/* Boot guard: if main app script fails to parse/run, show a clear recovery screen */
+window.__WO_READY=false;
+document.addEventListener('DOMContentLoaded',function(){
+  setTimeout(function(){
+    if(window.__WO_READY) return;
+    if(document.getElementById('__boot_fail')) return;
+    var d=document.createElement('div'); d.id='__boot_fail';
+    d.style.cssText='position:fixed;inset:0;z-index:99999;background:#142C40;color:#F3ECDD;padding:22px;direction:rtl;text-align:right;overflow:auto;font:15px/1.7 sans-serif';
+    d.innerHTML='<div style="font-size:18px;font-weight:700;color:#F2DEAE;margin-bottom:10px">تعذّر تشغيل التطبيق</div>'
+      +'<p>النسخة القديمة <b>1.8.0</b> تحتوي خطأً يمنع الأزرار من العمل.</p>'
+      +'<p><b>الحل:</b> احذف التطبيق وثبّت <b>1.8.2</b> من الرابط الرسمي، أو من الإعدادات امسح بيانات التطبيق (Clear storage) ثم أعد الفتح.</p>'
+      +'<p style="opacity:.8;font-size:13px">إن ظهرت هذه الرسالة بعد تثبيت 1.8.2، أعد تشغيل الهاتف وحاول مجدداً.</p>';
+    document.body.appendChild(d);
+  }, 1500);
+});
+</script>
+<script>
 /* QR generator: try local bundled file first (offline/APK); fall back to CDN
    if the local file is missing OR present but doesn't define QRCode. */
 (function(){
@@ -314,6 +331,101 @@
   .alert-ok{display:flex;align-items:center;gap:8px;padding:11px 13px;border-radius:12px;background:var(--ok-bg);color:var(--ok);font-size:12.8px;font-weight:600;}
   .alert-ok svg{width:17px;height:17px;}
 
+  /* ---- Workflow pipeline ---- */
+  .workflow{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch;}
+  .wf-step{flex:1;min-width:72px;text-align:center;padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:var(--card);cursor:pointer;transition:.15s;}
+  .wf-step .n{font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:3px;}
+  .wf-step .l{font-size:11px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .wf-step .c{font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-top:4px;}
+  .wf-step.done{border-color:var(--ok);background:var(--ok-bg);}
+  .wf-step.done .c{color:var(--ok);}
+  .wf-step.warn{border-color:var(--warn);background:var(--warn-bg);}
+  .wf-step.warn .c{color:var(--warn);}
+  .wf-step:active{transform:scale(.97);}
+
+  /* ---- Barcode scanner ---- */
+  .scanrow{display:flex;gap:8px;align-items:stretch;}
+  .scanrow input,.scanrow select,.scanrow textarea{flex:1;}
+  .btn-scan{flex:0 0 auto;width:44px;border-radius:11px;border:1px solid var(--line2);background:var(--paper);display:grid;place-items:center;color:var(--navy2);}
+  .btn-scan:active{transform:scale(.96);background:var(--wheat-bg);}
+  .scan-overlay{position:fixed;inset:0;z-index:90;background:#0a1520;display:flex;flex-direction:column;}
+  .scan-overlay .bar{padding:calc(12px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;justify-content:space-between;color:#F3ECDD;}
+  .scan-overlay .bar .t{font-family:'Reem Kufi';font-size:16px;font-weight:600;}
+  .scan-overlay video{flex:1;object-fit:cover;width:100%;max-height:55vh;}
+  .scan-overlay .hint{padding:14px;text-align:center;color:#A9C2D4;font-size:12.5px;line-height:1.7;}
+  .scan-overlay .frame{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:min(280px,80vw);height:120px;border:2px solid var(--wheat);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);pointer-events:none;}
+
+  /* ---- Device setup / login extras ---- */
+  .setup-btns{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+  .setup-btn{padding:14px;border-radius:14px;border:1px solid var(--line2);background:var(--card);text-align:right;cursor:pointer;}
+  .setup-btn .t{font-weight:700;font-size:14px;color:var(--ink);}
+  .setup-btn .d{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.5;}
+  .lg-extra{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line2);}
+
+  /* ---- Operator-only home (single screen) ---- */
+  body.operator-mode #secDash, body.operator-mode #superDash,
+  body.operator-mode #secKpis, body.operator-mode #kpis,
+  body.operator-mode #secWorkflow, body.operator-mode #workflow,
+  body.operator-mode #alertsHead, body.operator-mode #alerts,
+  body.operator-mode #secGovMeter, body.operator-mode #govMeter,
+  body.operator-mode #secTiles, body.operator-mode #tiles,
+  body.operator-mode .home-footnote{display:none!important;}
+  body.operator-mode #operatorHub{display:block!important;}
+  #operatorHub{display:none;}
+  .op-hero{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 16px;box-shadow:var(--shadow);margin-bottom:12px;}
+  .op-hero .t{font-family:'Reem Kufi';font-size:17px;font-weight:600;margin-bottom:4px;}
+  .op-hero .d{font-size:12.5px;color:var(--ink2);line-height:1.6;}
+  body.operator-mode #regBack{display:none;}
+  .tile.tile-primary{grid-column:1/-1;padding:18px 16px;}
+  .tile.tile-primary .nm{font-size:15px;}
+
+  /* ---- Record chain / governance ---- */
+  .gov-meter{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:12px;}
+  .gov-meter .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .gov-meter .pct{font-family:'IBM Plex Mono';font-size:22px;font-weight:700;color:var(--ok);}
+  .gov-meter .pct.warn{color:var(--warn);} .gov-meter .pct.bad{color:var(--danger);}
+  .gov-meter .bar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;}
+  .gov-meter .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#3aa86a);border-radius:6px;transition:width .4s;}
+  .chain-dots{display:flex;gap:4px;align-items:center;margin-top:8px;}
+  .chain-dot{width:10px;height:10px;border-radius:50%;background:var(--line);border:1px solid var(--line2);}
+  .chain-dot.ok{background:var(--ok);border-color:var(--ok);}
+  .chain-dot.warn{background:var(--warn);border-color:var(--warn);}
+  .chain-dot.miss{background:var(--danger-bg);border-color:var(--danger);}
+  /* dark mode */
+  body.dark{
+    --paper:#121820; --paper2:#1a2430; --card:#1e2a38; --ink:#eef2f6; --ink2:#b8c4d0; --ink3:#8a98a8;
+    --line:#2d3d4f; --line2:#3a4d62; --wheat-bg:#3d2e14; --wheat-soft:#e8c878; --ok-bg:#1a3328; --warn-bg:#3d2e14; --danger-bg:#3d1f1a;
+    color-scheme:dark;
+  }
+  body.dark .topbar{background:linear-gradient(180deg,#0a1520 0%,#142030 100%);}
+  body.glove-mode .btn,.glove-mode .tile,.glove-mode .iconbtn{min-height:52px;font-size:15px;}
+  body.glove-mode .tile .ic{width:48px;height:48px;}
+  body.glove-mode input,body.glove-mode select,body.glove-mode textarea{font-size:18px;padding:12px;}
+  .dash-chart{display:flex;align-items:flex-end;gap:6px;height:72px;margin-top:8px;}
+  .dash-chart .bar{flex:1;background:var(--wheat-bg);border-radius:6px 6px 2px 2px;min-width:0;position:relative;border:1px solid var(--line);}
+  .dash-chart .bar i{display:block;width:100%;background:var(--wheat);border-radius:5px 5px 0 0;min-height:4px;}
+  .dash-chart .bar span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:9px;color:var(--ink3);}
+  .photo-prev{max-width:100%;max-height:120px;border-radius:10px;border:1px solid var(--line);margin-top:6px;}
+  .sig-pad{border:1px dashed var(--line2);border-radius:10px;background:var(--paper);touch-action:none;margin-top:6px;}
+  .sig-pad canvas{width:100%;height:100px;display:block;}
+  .pin-gate{position:fixed;inset:0;z-index:90;background:linear-gradient(180deg,var(--navy),#0e2030);display:flex;align-items:center;justify-content:center;padding:24px;}
+  .sync-badge{font-size:10px;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.1);color:#A9C2D4;margin-inline-start:4px;}
+  .sync-badge.warn{background:var(--warn-bg);color:var(--warn);}
+  .chain-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy2);background:var(--paper);border:1px solid var(--line2);border-radius:9px;padding:7px 12px;margin-top:8px;}
+  .chain-link:active{transform:scale(.97);}
+  .chain-timeline{display:flex;flex-direction:column;gap:0;padding:4px 0;}
+  .chain-step{display:flex;gap:12px;position:relative;padding:10px 0;}
+  .chain-step:not(:last-child)::before{content:'';position:absolute;right:15px;top:34px;bottom:-6px;width:2px;background:var(--line);}
+  .chain-step .node{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;z-index:1;border:2px solid var(--line);background:var(--card);}
+  .chain-step.ok .node{border-color:var(--ok);background:var(--ok-bg);color:var(--ok);}
+  .chain-step.warn .node{border-color:var(--warn);background:var(--warn-bg);color:var(--warn);}
+  .chain-step.miss .node{border-color:var(--danger);background:var(--danger-bg);color:var(--danger);}
+  .chain-step .body{flex:1;min-width:0;}
+  .chain-step .bl{font-weight:700;font-size:13px;}
+  .chain-step .bs{font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.5;}
+  .gov-gap{display:flex;align-items:center;gap:8px;width:100%;text-align:right;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;font-size:12.5px;}
+  .gov-gap:active{transform:scale(.99);}
+
   @media print{
     .topbar,.rv-tools,.sh-foot,.footnote,#printBtn,.iconbtn,.rv-head .back,.report button{display:none!important;}
     body{background:#fff;} .report{border:none;box-shadow:none;margin:0 0 12px;}
@@ -328,8 +440,14 @@
       <div class="row">
         <div class="brand">
           <div class="t">تفريغ باخرة قمح سائب</div>
-          <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b> · <span id="tb-ver" style="opacity:.85"></span></div>
+          <div class="s">باخرة <b id="tb-ship">—</b> · ميناء <b id="tb-port">—</b> · <span id="tb-ver" style="opacity:.85">إصدار 1.8.2</span></div>
         </div>
+        <button class="iconbtn" id="globalSearchBtn" title="بحث شاحنة">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+        </button>
+        <button class="iconbtn" id="newTruckBtn" title="شاحنة جديدة (فحص→تصدير)" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
         <button class="iconbtn" id="openSettings" title="الإعدادات">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
@@ -338,16 +456,31 @@
     </div>
 
     <div class="wrap">
-      <div class="sec-h"><h2>المؤشرات اللحظية</h2><span class="hint">الوردية الحالية</span></div>
+      <div id="operatorHub">
+        <div class="op-hero" id="operatorHero"></div>
+        <div class="sec-h"><h2>شاشتك</h2><span class="hint">مخصصة لدورك</span></div>
+        <div class="tiles" id="operatorTiles" style="grid-template-columns:1fr"></div>
+        <div class="alerts" id="operatorAlerts" style="margin-top:10px"></div>
+      </div>
+
+      <div class="sec-h" id="secDash"><h2>لوحة المشرف</h2><span class="hint">مخططات الوردية</span></div>
+      <div id="superDash"></div>
+      <div class="sec-h" id="secKpis"><h2>المؤشرات اللحظية</h2><span class="hint">الوردية الحالية</span></div>
       <div class="kpis" id="kpis"></div>
+
+      <div class="sec-h" id="secWorkflow"><h2>سلسلة العمليات</h2><span class="hint">فحص ← تصدير ← ترحيل ← استقبال</span></div>
+      <div class="workflow" id="workflow"></div>
 
       <div class="sec-h" id="alertsHead"><h2>تنبيهات ذكية</h2><span class="hint">إجراءات مقترحة</span></div>
       <div class="alerts" id="alerts"></div>
 
-      <div class="sec-h"><h2>السجلات والنماذج</h2><span class="hint">١٢ سجلاً</span></div>
+      <div class="sec-h" id="secGovMeter"><h2>حوكمة وامتثال السلسلة</h2><span class="hint">ترابط السجلات</span></div>
+      <div id="govMeter"></div>
+
+      <div class="sec-h" id="secTiles"><h2>السجلات والنماذج</h2><span class="hint">١٢ سجلاً</span></div>
       <div class="tiles" id="tiles"></div>
 
-      <div class="footnote">
+      <div class="footnote home-footnote">
         وثيقة تشغيلية داخلية — تُعتمد من رئيس الفريق ونائب رئيس الفريق.<br>
         <b>قاعدة:</b> السجلات للإضافة فقط ولا تُحذف؛ عند الخطأ تُضاف ملاحظة تصحيحية. البيانات محفوظة على هذا الجهاز.
       </div>
@@ -365,6 +498,7 @@
     </div>
     <div class="rv-tools">
       <button class="btn btn-pri" id="regAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg><span id="regAddLbl">إضافة</span></button>
+      <button class="btn btn-ghost" id="regScan" title="مسح باركود بالكاميرا"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M7 12h10"/></svg></button>
       <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="regSearch" placeholder="بحث..."></div>
       <button class="btn btn-ghost" id="regCsv" title="تصدير CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l4-4m-4 4l-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></button>
     </div>
@@ -391,6 +525,24 @@
     <div id="govBody" style="padding:14px;"></div>
   </div>
 
+<div id="deviceSetupGate" class="hidden" style="position:fixed;inset:0;z-index:82;background:linear-gradient(180deg,var(--navy),#0e2030);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;">
+  <div style="width:100%;max-width:380px;background:var(--paper2);border-radius:18px;border-top:3px solid var(--wheat);box-shadow:var(--shadow-lg);padding:22px;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-family:'Reem Kufi';font-size:19px;font-weight:600;color:var(--ink)">إعداد الجهاز</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">اختر نوع هذا الجهاز قبل أول استخدام</div>
+    </div>
+    <div class="setup-btns">
+      <button type="button" class="setup-btn" id="setup_admin">
+        <div class="t">جهاز المشرف / الإدارة</div>
+        <div class="d">لرئيس الفريق والمشرفين — إنشاء المستخدمين وإدارة النظام</div>
+      </button>
+      <button type="button" class="setup-btn" id="setup_operator">
+        <div class="t">جهاز موظف ميداني</div>
+        <div class="d">للتصدير والترحيل والفحص والمالية — يُفعَّل بحساب من المشرف</div>
+      </button>
+    </div>
+  </div>
+</div>
 <div id="loginGate" class="hidden" style="position:fixed;inset:0;z-index:80;background:linear-gradient(180deg,var(--navy),#0e2030);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;">
   <div style="width:100%;max-width:360px;background:var(--paper2);border-radius:18px;border-top:3px solid var(--wheat);box-shadow:var(--shadow-lg);padding:22px;">
     <div style="text-align:center;margin-bottom:16px;">
@@ -402,6 +554,10 @@
     <div id="lg_err" style="color:var(--danger);font-size:12.5px;min-height:18px;margin-bottom:4px"></div>
     <button class="btn btn-pri" id="lg_btn" style="width:100%;justify-content:center">دخول</button>
     <div id="lg_hint" class="hint" style="text-align:center;margin-top:12px"></div>
+    <div id="lg_operator" class="lg-extra hidden">
+      <button class="btn btn-ghost" id="lg_scan_user" style="width:100%;justify-content:center;margin-bottom:8px">مسح QR تفعيل الحساب</button>
+      <div class="hint" style="text-align:center">اطلب من المشرف إنشاء حسابك ثم مسح رمز التفعيل أو أدخل اسم المستخدم وكلمة السر.</div>
+    </div>
   </div>
 </div>
 <div class="subscrim" id="subscrim"></div>
@@ -413,6 +569,15 @@
   <div class="sh-foot" id="sheetFoot"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="pinGate" class="pin-gate hidden">
+  <div style="width:100%;max-width:320px;background:var(--paper2);border-radius:18px;border-top:3px solid var(--wheat);padding:22px;text-align:center">
+    <div style="font-family:'Reem Kufi';font-size:18px;font-weight:600;margin-bottom:8px">قفل التطبيق</div>
+    <div class="hint" style="margin-bottom:12px">أدخل رمز PIN للمتابعة</div>
+    <input id="pin_input" type="password" inputmode="numeric" maxlength="8" style="width:100%;text-align:center;font-size:22px;letter-spacing:6px;padding:12px;border:1px solid var(--line);border-radius:11px">
+    <div id="pin_err" style="color:var(--danger);font-size:12px;min-height:18px;margin:6px 0"></div>
+    <button class="btn btn-pri" id="pin_unlock" style="width:100%;justify-content:center">فتح</button>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -456,6 +621,7 @@ const I = {
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v3M14 21h3v.01M21 21v-3"/>',
+  scan:'<path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3"/><path d="M7 12h10"/>',
   gov:'<path d="M12 3v18M5 21h14M7 7h10M7 7l-3 6a3 3 0 0 0 6 0zM17 7l-3 6a3 3 0 0 0 6 0z"/>',
   lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'
 };
@@ -582,7 +748,23 @@ const Sync = {
   },
   onLocalSet(key, val){
     if(this.applying || !this.active()) return;
-    if(key==='meta' || isCollectionKey(key)) this.push(key, val);
+    const allow=syncKeysForRole();
+    if(allow && key.indexOf('reg:')===0 && allow.indexOf(key)<0) return;
+    if(key==='meta' || isCollectionKey(key)) this.push(key, val).catch(()=>{ this.enqueue(key,val); });
+  },
+  enqueue(key,val){
+    DB.syncQueue.push({key, t:Date.now(), dev:this.dev});
+    if(DB.syncQueue.length>50) DB.syncQueue=DB.syncQueue.slice(-40);
+    saveSyncQueue();
+  },
+  async flushQueue(){
+    if(!this.active() || !DB.syncQueue.length) return;
+    const pending=DB.syncQueue.slice();
+    for(const item of pending){
+      const k=item.key, val=k==='users'?DB.users:(k==='handovers'?DB.handovers:(k.indexOf('reg:')===0?DB.reg[k.slice(4)]:null));
+      if(val!=null){ try{ await this.push(k,val); DB.syncQueue=DB.syncQueue.filter(x=>x!==item); }catch(e){} }
+    }
+    await saveSyncQueue(); refreshUI();
   },
   async applyEnvelope(key, env){
     if(!env || env.dev===this.dev || env.v==null) return;     // skip own echoes / empty
@@ -594,7 +776,10 @@ const Sync = {
         var local = key==='handovers'? DB.handovers : (key==='users'? DB.users : DB.reg[key.slice(4)]);
         var merged = unionById(local, remote);
         if(key==='handovers'){ DB.handovers=merged; await Store.set('handovers', merged); }
-        else if(key==='users'){ DB.users=merged; await Store.set('users', merged); }
+        else if(key==='users'){
+          DB.users=merged; await Store.set('users', merged);
+          onUsersSynced(merged.length);
+        }
         else { var rk=key.slice(4); DB.reg[rk]=merged; await Store.set('reg:'+rk, merged); }
         this.lastHash[key]=this.hash(env.v);
         if(this.hash(JSON.stringify(merged))!==this.hash(JSON.stringify(remote))){ this.applying=false; this.push(key, merged); this.applying=true; }
@@ -637,10 +822,28 @@ const Sync = {
   stop(){ if(this.es){ try{ this.es.close(); }catch(e){} this.es=null; } if(this.status!=='off') this.status='off'; },
   pushAll(){
     if(!this.active()) return;
+    const allow=syncKeysForRole();
     this.push('users', DB.users);
     this.push('handovers', DB.handovers);
-    REGS.forEach(r=> this.push('reg:'+r.key, DB.reg[r.key]) );
+    REGS.forEach(r=>{
+      const k='reg:'+r.key;
+      if(!allow || allow.indexOf(k)>=0) this.push(k, DB.reg[r.key]);
+    });
+    this.flushQueue();
   },
+  async pullKey(key){
+    if(!this.active()) return false;
+    var auth=await this.authenticate();
+    if(!auth.ok) return false;
+    try{
+      var r=await fetch(this.base()+'/'+sanitizeKey(key)+'.json'+this.q());
+      if(!r.ok) return false;
+      var env=await r.json();
+      if(env && env.v!=null) await this.applyEnvelope(key, env);
+      return true;
+    }catch(e){ return false; }
+  },
+  async pullUsers(){ return this.pullKey('users'); },
   async test(cfg){
     var auth=await this.getToken(cfg);
     if(!auth.ok) return {ok:false, msg:'المصادقة: '+(auth.msg||'فشلت')};
@@ -663,8 +866,8 @@ const Sync = {
 /* ============ Register definitions ============ */
 const SEL_YN = ['نعم','لا'];
 const REGS = [
-  { key:'export', title:'التصدير تحت الباخرة', short:'تحميل وتسجيل الشاحنات', icon:'truck',
-    color:{bg:'#FBEFD2',fg:'#8F5C08'}, addLabel:'تصدير شاحنة', autoSerial:true,
+  { key:'export', title:'التصدير تحت الباخرة', short:'الخطوة ٢ — تحميل وتسجيل الشاحنات', icon:'truck',
+    color:{bg:'#FBEFD2',fg:'#8F5C08'}, addLabel:'تصدير شاحنة', autoSerial:true, workflowStage:2,
     fields:[
       {n:'serial',l:'الرقم التسلسلي',t:'number',req:true,mono:true},
       {n:'truck',l:'رقم الشاحنة',t:'text',req:true,mono:true},
@@ -673,28 +876,32 @@ const REGS = [
       {n:'hopper',l:'رقم الهوبر',t:'text',mono:true},
       {n:'hold',l:'رقم الخن',t:'text',mono:true},
       {n:'destination',l:'الوجهة',t:'text'},
+      {n:'weightEmpty',l:'وزن فارغ عند التحميل (كغ)',t:'number',mono:true},
+      {n:'weightLoaded',l:'وزن محمّل عند التحميل (كغ)',t:'number',mono:true},
+      {n:'weightPhoto',l:'صورة الميزان',t:'photo'},
       {n:'officer',l:'مسؤول التصدير',t:'text'},
       {n:'notes',l:'ملاحظات',t:'textarea'}
-    ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['serial','loadTime','hopper','hold','destination','driver','officer'] },
+    ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['serial','loadTime','hopper','hold','_netWeight','destination','driver','officer'] },
 
-  { key:'dispatch', title:'الترحيل', short:'أوامر الترحيل ومتابعة الخروج', icon:'dispatch',
-    color:{bg:'#E5F0EE',fg:'#155E5A'}, addLabel:'أمر ترحيل',
+  { key:'dispatch', title:'الترحيل', short:'الخطوة ٣ — أوامر الترحيل ومتابعة الخروج', icon:'dispatch',
+    color:{bg:'#E5F0EE',fg:'#155E5A'}, addLabel:'أمر ترحيل', workflowStage:3,
     fields:[
       {n:'orderNo',l:'رقم أمر الترحيل',t:'text',req:true,mono:true},
       {n:'truck',l:'رقم الشاحنة',t:'text',req:true,mono:true},
       {n:'driver',l:'اسم السائق',t:'text'},
       {n:'mobile',l:'رقم الجوال',t:'tel',mono:true},
       {n:'destination',l:'الوجهة',t:'text'},
-      {n:'weight',l:'الكمية / الوزن',t:'text'},
+      {n:'weightEmpty',l:'الوزن فارغ (كغ)',t:'number',req:true,mono:true},
+      {n:'weightLoaded',l:'الوزن محمّل (كغ)',t:'number',req:true,mono:true},
       {n:'exitTime',l:'وقت الخروج',t:'time'},
       {n:'hopper',l:'رقم الهوبر',t:'text',mono:true},
       {n:'hold',l:'رقم الخن',t:'text',mono:true},
       {n:'officer',l:'مسؤول الترحيل',t:'text'},
       {n:'notes',l:'ملاحظات',t:'textarea'}
-    ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['orderNo','exitTime','destination','weight','hopper','officer'] },
+    ], titleField:'truck', titlePrefix:'شاحنة', qr:true, list:['orderNo','weightEmpty','weightLoaded','_netWeight','exitTime','destination','hopper','officer'] },
 
-  { key:'reception', title:'الاستقبال', short:'استلام ومطابقة الوصول', icon:'reception',
-    color:{bg:'#EAEFF5',fg:'#1E3F5A'}, addLabel:'تسجيل استقبال',
+  { key:'reception', title:'الاستقبال', short:'الخطوة ٤ — استلام ومطابقة الوصول', icon:'reception',
+    color:{bg:'#EAEFF5',fg:'#1E3F5A'}, addLabel:'تسجيل استقبال', workflowStage:4,
     fields:[
       {n:'truck',l:'رقم الشاحنة',t:'text',req:true,mono:true},
       {n:'driver',l:'اسم السائق',t:'text'},
@@ -702,12 +909,14 @@ const REGS = [
       {n:'arrival',l:'وقت الوصول',t:'time'},
       {n:'unloadTime',l:'وقت التفريغ',t:'time'},
       {n:'status',l:'حالة الحمولة',t:'select',o:['سليمة','عليها ملاحظة','مرفوضة']},
-      {n:'qty',l:'الكمية المستلمة',t:'text'},
+      {n:'weightEmpty',l:'الوزن فارغ (كغ)',t:'number',req:true,mono:true},
+      {n:'weightLoaded',l:'الوزن محمّل (كغ)',t:'number',req:true,mono:true},
+      {n:'qty',l:'الكمية المستلمة (كغ صافي)',t:'text'},
       {n:'officer',l:'مسؤول الاستقبال',t:'text'},
       {n:'notes',l:'ملاحظات',t:'textarea'}
     ], titleField:'truck', titlePrefix:'شاحنة', statusField:'status',
     statusTone:{'سليمة':'ok','عليها ملاحظة':'warn','مرفوضة':'danger'},
-    list:['arrival','unloadTime','destination','qty','officer'] },
+    list:['arrival','weightEmpty','weightLoaded','_netWeight','unloadTime','destination','qty','officer'] },
 
   { key:'quality', title:'الجودة والفحص', short:'ملاحظات الجودة على القمح', icon:'quality',
     color:{bg:'#E0F0E5',fg:'#2E7D4F'}, addLabel:'ملاحظة جودة',
@@ -719,14 +928,15 @@ const REGS = [
       {n:'obsType',l:'نوع الملاحظة',t:'select',req:true,o:['رطوبة','تكتل','رائحة غير طبيعية','حشرات','تغير لون','شوائب مؤثرة','شاحنة غير نظيفة','تسريب','أخرى']},
       {n:'obsDesc',l:'وصف الملاحظة',t:'textarea'},
       {n:'action',l:'الإجراء المتخذ',t:'textarea'},
-      {n:'photos',l:'صور مرفقة',t:'select',o:SEL_YN},
+      {n:'inspectionPhoto',l:'صورة الفحص',t:'photo'},
+      {n:'photos',l:'صور إضافية',t:'select',o:SEL_YN},
       {n:'officer',l:'مسؤول الفحص',t:'text'},
       {n:'notes',l:'ملاحظات',t:'text'}
     ], titleField:'obsType', statusField:'photos', statusTone:{'نعم':'ok','لا':'neutral'}, statusPrefix:'صور: ',
     list:['time','truck','hopper','hold','action','officer'] },
 
-  { key:'checklist', title:'قائمة تحقق الجودة', short:'قائمة فحص الشاحنة قبل التحميل', icon:'checklist',
-    color:{bg:'#EAF3EC',fg:'#2E7D4F'}, addLabel:'فحص جديد', isChecklist:true,
+  { key:'checklist', title:'مرحلة الفحص', short:'الخطوة ١ — فحص الشاحنة قبل التحميل', icon:'checklist',
+    color:{bg:'#EAF3EC',fg:'#2E7D4F'}, addLabel:'بدء فحص', isChecklist:true, workflowStage:1,
     items:[
       'صندوق الشاحنة نظيف قبل التحميل',
       'صندوق الشاحنة جاف ولا توجد رطوبة',
@@ -755,7 +965,7 @@ const REGS = [
     ], titleField:'desc', statusField:'deputy', statusTone:{'نعم':'ok','لا':'warn'}, statusPrefix:'النائب: ',
     list:['date','time','eventType','hold','action','notifyTime'] },
 
-  { key:'reconcile', title:'المطابقة المستقلة', short:'مطابقة المصدر والوكيل الملاحي', icon:'reconcile',
+  { key:'reconcile', title:'المطابقة المستقلة', short:'مطابقة الأوزان: ترحيل ↔ استقبال', icon:'reconcile',
     color:{bg:'#EAEFF5',fg:'#1E3F5A'}, addLabel:'تسجيل مطابقة',
     fields:[
       {n:'serial',l:'الرقم التسلسلي',t:'text',mono:true},
@@ -763,13 +973,17 @@ const REGS = [
       {n:'hopper',l:'رقم الهوبر',t:'text',mono:true},
       {n:'hold',l:'رقم الخن',t:'text',mono:true},
       {n:'loadTime',l:'وقت التحميل',t:'time'},
-      {n:'exporterData',l:'بيانات المصدر',t:'text'},
-      {n:'agentData',l:'بيانات الوكيل الملاحي',t:'text'},
+      {n:'dispatchEmpty',l:'وزن فارغ — ترحيل (كغ)',t:'number',mono:true},
+      {n:'dispatchLoaded',l:'وزن محمّل — ترحيل (كغ)',t:'number',mono:true},
+      {n:'receptionEmpty',l:'وزن فارغ — استقبال (كغ)',t:'number',mono:true},
+      {n:'receptionLoaded',l:'وزن محمّل — استقبال (كغ)',t:'number',mono:true},
+      {n:'exporterData',l:'بيانات المصدر / الترحيل',t:'text'},
+      {n:'agentData',l:'بيانات الوكيل / الاستقبال',t:'text'},
       {n:'result',l:'النتيجة',t:'select',req:true,o:['مطابق','اختلاف']},
       {n:'action',l:'الإجراء المتخذ',t:'textarea'},
       {n:'notes',l:'ملاحظات',t:'text'}
     ], titleField:'truck', titlePrefix:'شاحنة', statusField:'result', statusTone:{'مطابق':'ok','اختلاف':'danger'},
-    list:['serial','loadTime','exporterData','agentData','action'] },
+    list:['serial','_dispatchNet','_receptionNet','_weightDiff','result','action'] },
 
   { key:'stoppages', title:'التوقفات والأعطال', short:'التوقفات ونقص الشاحنات', icon:'stop',
     color:{bg:'#F6E7DC',fg:'#A8430F'}, addLabel:'تسجيل توقف',
@@ -801,20 +1015,27 @@ const REGS = [
     ], titleField:'vioType', statusField:'deputy', statusTone:{'نعم':'ok','لا':'danger'}, statusPrefix:'النائب: ',
     list:['date','time','truck','action'] },
 
-  { key:'finance', title:'المالية', short:'المستندات والمطابقة المالية', icon:'finance',
-    color:{bg:'#F4ECDD',fg:'#8F5C08'}, addLabel:'سجل مالي',
+  { key:'finance', title:'المالية', short:'صرف موظفي الميناء ونفقات الميناء', icon:'finance',
+    color:{bg:'#F4ECDD',fg:'#8F5C08'}, addLabel:'سجل صرف',
     fields:[
-      {n:'truck',l:'رقم الشاحنة',t:'text',req:true,mono:true},
-      {n:'exportOrder',l:'أمر التصدير',t:'select',o:SEL_YN},
-      {n:'dispatchOrder',l:'أمر الترحيل',t:'select',o:SEL_YN},
-      {n:'receipt',l:'سند الاستلام',t:'select',o:SEL_YN},
-      {n:'destination',l:'الوجهة',t:'text'},
-      {n:'amount',l:'المبلغ',t:'number',mono:true},
+      {n:'date',l:'التاريخ',t:'date',req:true},
+      {n:'expenseCat',l:'فئة الصرف',t:'select',req:true,o:[
+        'راتب/أجر موظف ميناء','بدل وردية موظف','مكافأة موظف ميناء',
+        'نفقة ميناء تشغيلية','صيانة معدات الميناء','مستلزمات ميدانية',
+        'خدمات خارجية للميناء','أخرى']},
+      {n:'employeeName',l:'اسم الموظف / المستفيد',t:'text'},
+      {n:'employeeId',l:'الرقم الوظيفي',t:'text',mono:true,scan:true},
+      {n:'section',l:'القسم في الميناء',t:'select',o:['التصدير','الترحيل','الاستقبال','الفحص والجودة','المالية','الإدارة','الصيانة','الساحة العامة','أخرى']},
+      {n:'description',l:'بيان الصرف / الغرض',t:'textarea',req:true},
+      {n:'amount',l:'المبلغ (ريال)',t:'number',req:true,mono:true},
+      {n:'paymentMethod',l:'طريقة الصرف',t:'select',o:['نقدي','تحويل بنكي','شيك','بطاقة','أخرى']},
+      {n:'receiptNo',l:'رقم السند / الإيصال',t:'text',mono:true},
+      {n:'receiptPhoto',l:'صورة الإيصال',t:'photo'},
+      {n:'shiftTag',l:'الوردية',t:'text'},
       {n:'approval',l:'حالة الاعتماد',t:'select',req:true,o:['معتمد','معلق','مرفوض']},
-      {n:'missing',l:'مستندات ناقصة',t:'text'},
       {n:'notes',l:'ملاحظات',t:'text'}
-    ], titleField:'truck', titlePrefix:'شاحنة', statusField:'approval', statusTone:{'معتمد':'ok','معلق':'warn','مرفوض':'danger'},
-    list:['amount','destination','exportOrder','dispatchOrder','receipt','missing'] }
+    ], titleField:'description', statusField:'approval', statusTone:{'معتمد':'ok','معلق':'warn','مرفوض':'danger'},
+    list:['date','expenseCat','employeeName','section','amount','paymentMethod','receiptNo'] }
 ];
 const REGMAP = {}; REGS.forEach(function(r){ REGMAP[r.key]=r; });
 
@@ -823,11 +1044,45 @@ const SUPER=['مدير العمليات والتفريغ المناوب','نائ
 const ALL_ROLES=['مدير العمليات والتفريغ المناوب','نائب رئيس الفريق','رئيس الفريق','مسؤول التصدير','مسؤول الترحيل','مسؤول الفحص والجودة','مسؤول الاستقبال','المالية'];
 const ROLE_OF={export:['مسؤول التصدير'],dispatch:['مسؤول الترحيل'],reception:['مسؤول الاستقبال'],quality:['مسؤول الفحص والجودة'],checklist:['مسؤول الفحص والجودة'],finance:['المالية']};
 REGS.forEach(r=> r.roles = ROLE_OF[r.key]||[]);
-const APP_VERSION='1.6.0';
+const APP_VERSION='1.8.2';
+function safeOn(sel, fn){ const el=$(sel); if(el) el.onclick=fn; return el; }
+function resetOverlays(){
+  ['loginGate','deviceSetupGate','pinGate'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('hidden'); });
+  document.body.style.overflow='';
+  const ss=$('#subscrim'); if(ss) ss.classList.remove('on');
+  const sc=$('#scrim'); if(sc) sc.classList.remove('on');
+}
+function ensureHomeInteractive(){
+  const tiles=$('#tiles'), kpis=$('#kpis');
+  if((tiles&&tiles.innerHTML)||(kpis&&kpis.innerHTML)) return;
+  if(!DB.deviceSetup||!DB.deviceSetup.configured){ openDeviceSetup(); return; }
+  if(!currentUser()){ openLogin(); return; }
+  try{ renderHome(); }catch(e){}
+}
+const DEFAULT_PREFS={
+  weightToleranceKg:50, dailySpendCap:0, shiftSpendCap:0, darkMode:false, gloveMode:false,
+  appPinHash:'', mandatoryBarcodeExport:true, deputyReadOnly:true, retentionDays:90,
+  partialSync:true, checklistItems:null, alertSound:true, alertVibrate:true,
+  mandatoryOperatorSync:true, autoReconcile:true, autoBackupDaily:true, scaleManualHint:true
+};
+const WORKFLOW_KEYS=['checklist','export','dispatch','reception'];
+const CHAIN_STAGES=[
+  {key:'checklist',label:'مرحلة الفحص',icon:'checklist',required:true},
+  {key:'export',label:'التصدير',icon:'truck',required:true},
+  {key:'dispatch',label:'الترحيل',icon:'dispatch',required:true},
+  {key:'reception',label:'الاستقبال',icon:'reception',required:true},
+  {key:'quality',label:'ملاحظة جودة',icon:'quality',required:false}
+];
+const CHAIN_LINK_KEYS=['checklist','export','dispatch','reception','quality','violations','reconcile'];
+const ROLE_PRIMARY={
+  'مسؤول التصدير':'export','مسؤول الترحيل':'dispatch','مسؤول الاستقبال':'reception',
+  'مسؤول الفحص والجودة':'checklist','المالية':'finance'
+};
+const SCAN_FIELDS=['truck','employeeId','receiptNo','orderNo','serial'];
 
 /* ============ State ============ */
-const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null };
-const DEFAULT_META = { ship:'INCE INEBOLU', port:'الصليف', startDate:'', shift:'الوردية الأولى', operator:'', role:'', hoppers:'', approvedBy:'' };
+const DB = { meta:{}, reg:{}, handovers:[], users:[], sessionUser:null, deviceSetup:null, auditLog:[], loginFails:[], syncQueue:[], archive:null, pinUnlocked:false };
+const DEFAULT_META = { ship:'INCE INEBOLU', port:'الصليف', startDate:'', shift:'الوردية الأولى', operator:'', role:'', hoppers:'', approvedBy:'', prefs:null, lastBackupDate:'' };
 
 async function loadAll(){
   const m = await Store.get('meta');
@@ -838,8 +1093,44 @@ async function loadAll(){
   DB.handovers = (await Store.get('handovers')) || [];
   DB.users = (await Store.get('users')) || [];
   DB.sessionUser = await Store.get('session');
+  DB.deviceSetup = await Store.get('deviceSetup');
+  DB.auditLog = (await Store.get('auditLog')) || [];
+  DB.loginFails = (await Store.get('loginFails')) || [];
+  DB.syncQueue = (await Store.get('syncQueue')) || [];
+  DB.archive = await Store.get('archive');
+  if(!DB.meta.prefs) DB.meta.prefs=Object.assign({}, DEFAULT_PREFS);
+  else DB.meta.prefs=Object.assign({}, DEFAULT_PREFS, DB.meta.prefs);
+  applyPrefs();
   await ensureSeedAdmin();
 }
+async function saveAuditLog(){ await Store.set('auditLog', DB.auditLog); }
+async function saveLoginFails(){ await Store.set('loginFails', DB.loginFails); }
+async function saveSyncQueue(){ await Store.set('syncQueue', DB.syncQueue); }
+function prefs(){ return DB.meta.prefs || DEFAULT_PREFS; }
+function weightTolerance(){ return Number(prefs().weightToleranceKg)||0; }
+function applyPrefs(){
+  const p=prefs();
+  document.body.classList.toggle('dark', !!p.darkMode);
+  document.body.classList.toggle('glove-mode', !!p.gloveMode);
+  const meta=document.querySelector('meta[name="color-scheme"]');
+  if(meta) meta.content=p.darkMode?'dark':'light';
+}
+function checklistItems(){
+  const c=prefs().checklistItems;
+  if(Array.isArray(c) && c.length) return c;
+  return (REGMAP.checklist && REGMAP.checklist.items) || [];
+}
+async function audit(action, detail){
+  DB.auditLog.push({action, detail:detail||'', user:DB.meta.operator||'', role:DB.meta.role||'', t:nowTime(), d:todayDate(), id:Date.now()});
+  if(DB.auditLog.length>600) DB.auditLog=DB.auditLog.slice(-500);
+  await saveAuditLog();
+}
+async function logFailedLogin(username){
+  DB.loginFails.push({username, t:nowTime(), d:todayDate(), id:Date.now()});
+  if(DB.loginFails.length>200) DB.loginFails=DB.loginFails.slice(-150);
+  await saveLoginFails();
+}
+async function saveDeviceSetup(){ await Store.set('deviceSetup', DB.deviceSetup); }
 async function saveMeta(){ await Store.set('meta', DB.meta); }
 async function saveReg(key){ await Store.set('reg:'+key, DB.reg[key]); }
 async function saveHandovers(){ await Store.set('handovers', DB.handovers); }
@@ -860,10 +1151,42 @@ async function hashPass(s){
 async function verifyPass(s,stored){ return (await hashPass(s))===stored; }
 async function ensureSeedAdmin(){
   if(!Array.isArray(DB.users)) DB.users=[];
-  if(DB.users.length===0){
+  const configured=DB.deviceSetup && DB.deviceSetup.configured;
+  const isAdminDevice=DB.deviceSetup && DB.deviceSetup.mode==='admin';
+  if(!configured){
+    if(DB.users.length && !DB.deviceSetup){
+      DB.deviceSetup={mode:'admin',configured:true}; await saveDeviceSetup();
+    }
+    return;
+  }
+  if(DB.users.length===0 && isAdminDevice){
     DB.users.push({ id:Date.now(), name:'المسؤول', username:'admin', role:'رئيس الفريق',
       pass:await hashPass('admin'), active:true, mustChange:true, _t:nowTime(), _d:todayDate(), _by:'النظام' });
     await saveUsers();
+  }
+}
+function isOperatorDevice(){ return DB.deviceSetup && DB.deviceSetup.mode==='operator'; }
+function isSupervisorRole(role){ return SUPER.includes(role||''); }
+function isOperatorView(){
+  const u=currentUser();
+  return !!(u && !isSupervisorRole(u.role));
+}
+function operatorAllowedKeys(){
+  const u=currentUser();
+  if(!u || isSupervisorRole(u.role)) return null;
+  const keys=Object.keys(ROLE_OF).filter(k=>(ROLE_OF[k]||[]).includes(u.role));
+  return keys.length? keys : (ROLE_PRIMARY[u.role]? [ROLE_PRIMARY[u.role]] : []);
+}
+function applyOperatorLayout(){
+  document.body.classList.toggle('operator-mode', isOperatorView());
+}
+function onUsersSynced(count){
+  const gate=$('#loginGate');
+  if(gate && !gate.classList.contains('hidden') && isOperatorDevice()){
+    const n=count!=null? count : (DB.users||[]).length;
+    toast('تم تحميل '+n+' حساب من المزامنة');
+    const hint=$('#lg_hint');
+    if(hint && Sync.active()) hint.innerHTML='الحسابات متزامنة من المشرف — أدخل اسم المستخدم وكلمة السر.';
   }
 }
 function findUser(username){
@@ -885,15 +1208,100 @@ function applySession(){
 /* ============ Governance enforcement ============ */
 function canAccess(r){
   const role=currentRole();
-  if(!role) return true;                 // role not set → full access (configure per device)
-  if(SUPER.includes(role)) return true;  // supervisors: full access
+  if(!role) return true;
+  if(SUPER.includes(role)) return true;
   return (r.roles||[]).includes(role);
+}
+function isDeputyReadOnly(){
+  return !!(prefs().deputyReadOnly && currentRole()==='نائب رئيس الفريق');
+}
+function canWrite(r){
+  if(isDeputyReadOnly()) return false;
+  return canAccess(r);
+}
+function syncKeysForRole(){
+  if(!prefs().partialSync || isSupervisorRole(currentRole())) return null;
+  const keys=operatorAllowedKeys();
+  if(!keys) return null;
+  return keys.map(k=>'reg:'+k);
 }
 function approvedHoppers(){
   return (DB.meta.hoppers||'').split(/[,،\s]+/).map(s=>s.trim()).filter(Boolean);
 }
 function govGate(message){
   return confirm(message+'\n\nاضغط «موافق» للتجاوز الاستثنائي (يُسجَّل في سجل الحقائق)،\nأو «إلغاء» للتصحيح.');
+}
+function normTruck(v){ return String(v||'').trim(); }
+function latestByTruck(key, truck){
+  const t=normTruck(truck);
+  const arr=(DB.reg[key]||[]).filter(x=>normTruck(x.truck)===t);
+  if(!arr.length) return null;
+  return arr.reduce((a,b)=>(Number(b._id)||0)>(Number(a._id)||0)?b:a);
+}
+function buildTruckChain(truck){
+  const t=normTruck(truck), c={truck:t};
+  CHAIN_STAGES.forEach(s=>{ c[s.key]=latestByTruck(s.key,t); });
+  c.violations=(DB.reg.violations||[]).filter(x=>normTruck(x.truck)===t);
+  c.reconcile=latestByTruck('reconcile',t);
+  return c;
+}
+function chainStageStatus(truck){
+  return CHAIN_STAGES.map(s=>{
+    const rec=latestByTruck(s.key,truck);
+    let tone='miss';
+    if(rec) tone=rec._override?'warn':'ok';
+    else if(!s.required) tone='neutral';
+    return Object.assign({},s,{rec,tone,done:!!rec,state:rec?(rec._override?'تجاوز موثّق':'مكتمل'):(s.required?'ناقص':'اختياري')});
+  });
+}
+function isChainComplete(truck){
+  return chainStageStatus(truck).filter(s=>s.required).every(s=>s.done);
+}
+function allTrucksInChain(){
+  const set=new Set();
+  CHAIN_LINK_KEYS.forEach(k=>{ (DB.reg[k]||[]).forEach(r=>{ const t=normTruck(r.truck); if(t) set.add(t); }); });
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'ar'));
+}
+function governanceStats(){
+  const trucks=allTrucksInChain();
+  const complete=trucks.filter(isChainComplete).length;
+  const gaps=trucks.filter(t=>!isChainComplete(t)).map(t=>({
+    truck:t, missing:chainStageStatus(t).filter(s=>s.required&&!s.done).map(s=>s.label)
+  }));
+  return {total:trucks.length, complete, broken:trucks.length-complete,
+    pct:trucks.length?Math.round(complete/trucks.length*100):100, gaps};
+}
+function linkChainOnSave(rec){
+  const t=normTruck(rec.truck);
+  if(!t) return;
+  rec._chainTruck=t;
+  const links={};
+  CHAIN_LINK_KEYS.forEach(k=>{
+    const r=latestByTruck(k,t);
+    if(r) links[k]=r._id;
+  });
+  rec._links=links;
+}
+function chainDotsHtml(truck){
+  return '<div class="chain-dots">'+chainStageStatus(truck).filter(s=>s.required).map(s=>
+    `<span class="chain-dot ${s.done?(s.tone==='warn'?'warn':'ok'):'miss'}" title="${esc(s.label)}"></span>`
+  ).join('')+'</div>';
+}
+function chainSummaryLine(rec,r){
+  const t=normTruck(rec.truck);
+  if(!t) return '';
+  if(r.key==='export' && rec.serial) return 'تسلسل '+rec.serial+' · '+esc(rec.destination||'');
+  if(r.key==='dispatch' && rec.orderNo){
+    const n=truckNetWeight(rec);
+    return 'أمر '+rec.orderNo+(n!=null?' · صافي '+n.toLocaleString('ar-SA')+' كغ':'');
+  }
+  if(r.key==='reception'){
+    const n=truckNetWeight(rec);
+    return (rec.status?esc(rec.status):'')+(n!=null?' · صافي '+n.toLocaleString('ar-SA')+' كغ':'');
+  }
+  if(r.key==='checklist' && rec.items) return (rec.items.filter(x=>x.ok).length)+'/'+rec.items.length+' بنود';
+  if(r.key==='quality' && rec.obsType) return esc(rec.obsType);
+  return rec._t?('س '+rec._t):'';
 }
 function logException(desc, refNote){
   DB.reg.incidents.push({ date:todayDate(), time:nowTime(), eventType:'مخالفة',
@@ -914,11 +1322,42 @@ function durationMin(s,e){
   const [sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);
   let d=(eh*60+em)-(sh*60+sm); if(d<0)d+=24*60; return d;
 }
+function parseKg(v){
+  const n=Number(String(v==null?'':v).replace(/,/g,'').trim());
+  return isNaN(n)?null:n;
+}
+function calcNet(empty, loaded){
+  const e=parseKg(empty), l=parseKg(loaded);
+  if(e==null || l==null) return null;
+  return l-e;
+}
+function truckNetWeight(rec){
+  if(!rec) return null;
+  if(rec._netWeight!=null && rec._netWeight!=='') return parseKg(rec._netWeight);
+  const n=calcNet(rec.weightEmpty, rec.weightLoaded);
+  if(n!=null) return n;
+  return parseKg(rec.weight);
+}
 function valDisplay(r,rec,name){
   if(name==='_duration'){ const d=durationMin(rec.startTime,rec.endTime); return d==null?'':d+' دقيقة'; }
+  if(name==='_netWeight'){ const n=truckNetWeight(rec); return n==null?'':n.toLocaleString('ar-SA')+' كغ'; }
+  if(name==='_dispatchNet'){ const n=calcNet(rec.dispatchEmpty,rec.dispatchLoaded); return n==null?'':n.toLocaleString('ar-SA')+' كغ'; }
+  if(name==='_receptionNet'){ const n=calcNet(rec.receptionEmpty,rec.receptionLoaded); return n==null?'':n.toLocaleString('ar-SA')+' كغ'; }
+  if(name==='_weightDiff'){
+    const dn=calcNet(rec.dispatchEmpty,rec.dispatchLoaded), rn=calcNet(rec.receptionEmpty,rec.receptionLoaded);
+    if(dn==null||rn==null) return rec.weightDiff?rec.weightDiff+' كغ':'';
+    return Math.abs(dn-rn).toLocaleString('ar-SA')+' كغ';
+  }
   return rec[name];
 }
-function labelFor(r,name){ if(name==='_duration')return 'مدة التوقف'; const f=fieldByName(r,name); return f?f.l:name; }
+function labelFor(r,name){
+  if(name==='_duration')return 'مدة التوقف';
+  if(name==='_netWeight')return 'الوزن الصافي';
+  if(name==='_dispatchNet')return 'صافي الترحيل';
+  if(name==='_receptionNet')return 'صافي الاستقبال';
+  if(name==='_weightDiff')return 'فرق الصافي';
+  const f=fieldByName(r,name); return f?f.l:name;
+}
 
 function toast(msg){
   const t=$('#toast'); t.innerHTML=svg('quality',16)+'<span>'+esc(msg)+'</span>'; t.classList.add('on');
@@ -940,7 +1379,35 @@ function renderMeta(){
   $('#metabar').querySelectorAll('[data-set]').forEach(b=>b.onclick=openSettings);
 }
 
+function renderSuperDash(){
+  const el=$('#superDash'), head=$('#secDash');
+  if(!el) return;
+  if(isOperatorView()){ el.innerHTML=''; if(head) head.style.display='none'; return; }
+  if(head) head.style.display='';
+  const stages=[
+    {k:'checklist',l:'فحص'},{k:'export',l:'تصدير'},{k:'dispatch',l:'ترحيل'},{k:'reception',l:'استقبال'}
+  ];
+  const max=Math.max(1,...stages.map(s=>(DB.reg[s.k]||[]).length));
+  const bars=stages.map(s=>{
+    const n=(DB.reg[s.k]||[]).length, pct=Math.round(n/max*100);
+    return `<div class="bar"><i style="height:${pct}%"></i><span>${esc(s.l)}</span></div>`;
+  }).join('');
+  const fin=(DB.reg.finance||[]).filter(x=>x.approval==='معتمد'&&x._d===todayDate()).reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const q=DB.syncQueue.length;
+  el.innerHTML=`<div class="gov-meter"><div class="top"><div style="font-size:13px;font-weight:600">تدفق الوردية</div>
+    <div class="pct">${DB.reg.export.length} شاحنة</div></div>
+    <div class="dash-chart">${bars}</div>
+    <div class="hint" style="margin-top:22px">صرف اليوم: <b>${fin.toLocaleString('ar-SA')} ريال</b>
+      ${q?` · <span class="sync-badge warn">مزامنة معلّقة: ${q}</span>`:''}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="dash_report" style="flex:1;font-size:12px;justify-content:center">تقرير الوردية PDF</button>
+      <button class="btn btn-ghost" id="dash_fin" style="flex:1;font-size:12px;justify-content:center">تقرير مالي شهري</button>
+    </div></div>`;
+  const dr=$('#dash_report'); if(dr) dr.onclick=()=>{ openHandover(); };
+  const df=$('#dash_fin'); if(df) df.onclick=openFinanceMonthlyReport;
+}
 function renderKpis(){
+  if(isOperatorView()){ $('#kpis').innerHTML=''; return; }
   const c = k=> DB.reg[k].length;
   const stopMin = DB.reg.stoppages.reduce((a,r)=>a+(durationMin(r.startTime,r.endTime)||0),0);
   const diffs = DB.reg.reconcile.filter(r=>r.result==='اختلاف').length;
@@ -951,18 +1418,44 @@ function renderKpis(){
     {v:c('reception'),l:'شاحنات مستلمة',sub:'في الموقع',a:'#1E3F5A'},
     {v:c('quality'),l:'ملاحظات جودة',sub:'مسجلة',a:'#2E7D4F'},
     {v:c('stoppages'),l:'توقفات',sub:stopMin+' دقيقة إجمالاً',a:'#A8430F'},
-    {v:diffs,l:'اختلافات مطابقة',sub:c('violations')+' مخالفة · '+pendFin+' مالية معلقة',a:'#B23528'}
+    {v:diffs,l:'اختلافات مطابقة',sub:c('violations')+' مخالفة · '+pendFin+' صرف معلّق',a:'#B23528'}
   ];
   $('#kpis').innerHTML = data.map((d,i)=>`<div class="kpi" style="--accent:${d.a};animation-delay:${i*45}ms">
     <div class="v mono">${d.v}</div><div class="l">${d.l}</div><div class="sub">${esc(d.sub)}</div></div>`).join('');
 }
 
+function renderOperatorHub(){
+  const u=currentUser(), allowed=operatorAllowedKeys()||[];
+  const hero=$('#operatorHero');
+  if(hero) hero.innerHTML=`<div class="t">مرحباً ${esc(u.name||u.username)}</div>
+    <div class="d">دورك: <b>${esc(u.role)}</b> — هذه الشاشة مخصصة لعملك فقط. بقية السجلات مخفية.</div>`;
+  const items=REGS.filter(r=>allowed.includes(r.key)).map(r=>({
+    key:r.key,title:r.title,short:r.short,icon:r.icon,color:r.color,
+    cnt:(r.isChecklist? (DB.reg[r.key]||[]).length : DB.reg[r.key].length), primary:ROLE_PRIMARY[u.role]===r.key
+  }));
+  const tileHtml=(t,i,primary)=>`
+    <button class="tile${primary?' tile-primary':''}" data-tile="${t.key}" style="animation-delay:${i*40}ms">
+      <div class="top"><div class="ic" style="--tbg:${t.color.bg};--tfg:${t.color.fg}">${svg(t.icon,21)}</div>
+        <div class="cnt mono">${t.cnt}</div></div>
+      <div class="nm">${t.title}</div><div class="ds">${t.short}</div></button>`;
+  const ot=$('#operatorTiles');
+  if(ot) ot.innerHTML=items.map((t,i)=>tileHtml(t,i,t.primary)).join('');
+  ot && ot.querySelectorAll('[data-tile]').forEach(b=>b.onclick=()=>openRegister(b.dataset.tile));
+  const A=computeAlerts().filter(a=>allowed.includes(a.go));
+  const oa=$('#operatorAlerts');
+  if(oa){
+    if(!A.length) oa.innerHTML='';
+    else oa.innerHTML=A.map((a,i)=>`<button class="alert a-${a.tone}" data-go="${a.go}" style="animation-delay:${i*40}ms">${svg('incident',16)}<span>${esc(a.t)}</span><span class="ago">عرض ›</span></button>`).join('');
+    oa.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>openRegister(b.dataset.go));
+  }
+}
 function renderTiles(){
+  if(isOperatorView()){ renderOperatorHub(); $('#tiles').innerHTML=''; return; }
   const items = REGS.map(r=>({key:r.key,title:r.title,short:r.short,icon:r.icon,color:r.color,
     locked:!canAccess(r),
     cnt:(r.isChecklist? (DB.reg[r.key]||[]).length : DB.reg[r.key].length)}));
   items.push({key:'__handover',title:'تسليم الوردية',short:'ملخص وتقرير الوردية',icon:'handover',color:{bg:'#EAEFF5',fg:'#1E3F5A'},cnt:''});
-  items.push({key:'__gov',title:'حوكمة البرنامج',short:'قواعد الضبط وسلامة البيانات',icon:'gov',color:{bg:'#E8EDF3',fg:'#142C40'},cnt:''});
+  items.push({key:'__gov',title:'حوكمة البرنامج',short:'قواعد الضبط وترابط السجلات',icon:'gov',color:{bg:'#E8EDF3',fg:'#142C40'},cnt:governanceStats().pct+'%'});
   $('#tiles').innerHTML = items.map((t,i)=>`
     <button class="tile" data-tile="${t.key}" style="animation-delay:${i*40}ms${t.locked?';opacity:.62':''}">
       <div class="top">
@@ -981,6 +1474,7 @@ function renderTiles(){
 /* ============ Smart alerts (actionable insights) ============ */
 function computeAlerts(){
   const A=[], norm=v=>String(v||'').trim();
+  const allowed=operatorAllowedKeys();
   const exp=DB.reg.export||[], dis=DB.reg.dispatch||[], rec=DB.reg.reception||[];
   const setDis=new Set(dis.map(x=>norm(x.truck)).filter(Boolean));
   const setRec=new Set(rec.map(x=>norm(x.truck)).filter(Boolean));
@@ -998,18 +1492,85 @@ function computeAlerts(){
   if(loadedNoDispatch) A.push({t:loadedNoDispatch+' شاحنة محمّلة بلا ترحيل', tone:'warn', go:'dispatch'});
   if(dispatchedNoReception) A.push({t:dispatchedNoReception+' شاحنة مرحّلة بلا استقبال', tone:'warn', go:'reception'});
   if(exportedNoCheck) A.push({t:exportedNoCheck+' شاحنة صُدّرت بلا فحص جودة', tone:'warn', go:'checklist'});
-  if(pendFin) A.push({t:pendFin+' سجل مالي معلّق', tone:'warn', go:'finance'});
+  if(pendFin) A.push({t:pendFin+' صرف موظف/ميناء معلّق', tone:'warn', go:'finance'});
+  const finTotal=(DB.reg.finance||[]).filter(x=>x.approval==='معتمد').reduce((a,x)=>a+(Number(x.amount)||0),0);
+  if(finTotal>0 && isAdmin()) A.push({t:'إجمالي صرف معتمد: '+finTotal.toLocaleString('ar-SA')+' ريال', tone:'ok', go:'finance'});
+  const g=governanceStats();
+  if(g.broken && isAdmin()) A.push({t:g.broken+' شاحنة بسلسلة سجلات ناقصة', tone:'warn', go:'__chains'});
+  if(allowed) return A.filter(a=>allowed.includes(a.go));
   return A;
+}
+function renderWorkflow(){
+  const el=$('#workflow'); if(!el) return;
+  if(isOperatorView()){ el.innerHTML=''; return; }
+  const norm=v=>String(v||'').trim();
+  const exp=DB.reg.export||[], dis=DB.reg.dispatch||[], rec=DB.reg.reception||[], chk=DB.reg.checklist||[];
+  const stages=[
+    {key:'checklist',n:'١',l:'الفحص',cnt:chk.length, warn:exp.some(x=>{const t=norm(x.truck);return t&&!chk.some(c=>norm(c.truck)===t);})},
+    {key:'export',n:'٢',l:'التصدير',cnt:exp.length, warn:exp.some(x=>{const t=norm(x.truck);return t&&!dis.some(d=>norm(d.truck)===t);})},
+    {key:'dispatch',n:'٣',l:'الترحيل',cnt:dis.length, warn:dis.some(x=>{const t=norm(x.truck);return t&&!rec.some(r=>norm(r.truck)===t);})},
+    {key:'reception',n:'٤',l:'الاستقبال',cnt:rec.length, warn:false}
+  ];
+  el.innerHTML=stages.map(s=>{
+    const cls=s.warn?'warn':(s.cnt?'done':'');
+    return `<button type="button" class="wf-step ${cls}" data-wf="${s.key}"><div class="n">مرحلة ${s.n}</div><div class="l">${s.l}</div><div class="c">${s.cnt}</div></button>`;
+  }).join('');
+  el.querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>openRegister(b.dataset.wf));
 }
 function renderAlerts(){
   const el=$('#alerts'); if(!el) return;
+  if(isOperatorView()){ el.innerHTML=''; return; }
   const A=computeAlerts();
   if(!A.length){ el.innerHTML=`<div class="alert-ok">${svg('quality',16)}<span>كل شيء منضبط — لا تنبيهات حالياً.</span></div>`; return; }
   el.innerHTML=A.map((a,i)=>`<button class="alert a-${a.tone}" data-go="${a.go}" style="animation-delay:${i*40}ms">${svg('incident',16)}<span>${esc(a.t)}</span><span class="ago">عرض ›</span></button>`).join('');
-  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>openRegister(b.dataset.go));
+  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
+    if(b.dataset.go==='__chains') openChainRegistry(); else openRegister(b.dataset.go);
+  });
 }
 
-function renderHome(){ renderMeta(); renderKpis(); renderAlerts(); renderTiles(); }
+function renderGovMeter(){
+  const el=$('#govMeter'), head=$('#secGovMeter');
+  if(!el) return;
+  if(isOperatorView()){ el.innerHTML=''; if(head) head.style.display='none'; return; }
+  if(head) head.style.display='';
+  const g=governanceStats();
+  const cls=g.pct>=90?'':(g.pct>=70?' warn':' bad');
+  el.innerHTML=`<div class="gov-meter">
+    <div class="top"><div><div style="font-size:12px;color:var(--ink2)">سلاسل شاحنات مكتملة (فحص→تصدير→ترحيل→استقبال)</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">${g.complete} من ${g.total} شاحنة · ${g.broken} بها فجوات</div></div>
+      <div class="pct${cls}">${g.pct}%</div></div>
+    <div class="bar"><i style="width:${g.pct}%"></i></div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="gm_chains" style="flex:1;justify-content:center;font-size:12px">سلاسل الشاحنات</button>
+      <button class="btn btn-ghost" id="gm_gov" style="flex:1;justify-content:center;font-size:12px">حوكمة البرنامج</button>
+    </div></div>`;
+  $('#gm_chains').onclick=openChainRegistry;
+  $('#gm_gov').onclick=openGovernance;
+}
+function maybeAlertChainGaps(){
+  const p=prefs(); if(!p.alertSound && !p.alertVibrate) return;
+  const g=governanceStats();
+  if(!g.broken || isOperatorView()) return;
+  if(p.alertVibrate && navigator.vibrate) try{ navigator.vibrate([80,40,80]); }catch(e){}
+  if(p.alertSound){ try{ const a=new AudioContext(); const o=a.createOscillator(); const g2=a.createGain();
+    o.frequency.value=440; g2.gain.value=0.08; o.connect(g2); g2.connect(a.destination); o.start(); o.stop(a.currentTime+0.15);
+  }catch(e){} }
+}
+function renderHome(){
+  try{
+    applyOperatorLayout();
+    const nt=$('#newTruckBtn');
+    if(nt) nt.style.display=(canAccess(REGMAP.checklist)||canAccess(REGMAP.export))?'':'none';
+    renderMeta();
+    try{ renderSuperDash(); }catch(e){}
+    try{ renderKpis(); }catch(e){}
+    try{ renderWorkflow(); }catch(e){}
+    try{ renderAlerts(); }catch(e){}
+    try{ renderGovMeter(); }catch(e){}
+    try{ renderTiles(); }catch(e){}
+    try{ maybeAlertChainGaps(); }catch(e){}
+  }catch(e){ console.error(e); }
+}
 
 /* Re-render visible UI after a remote sync update */
 function refreshUI(){
@@ -1038,14 +1599,22 @@ function show(view){
   $('#subscrim').classList.add('on');
   document.body.style.overflow='hidden';   // lock background scroll
 }
-$('#subscrim').onclick=()=>show('home');
-$('#regBack').onclick=()=>{ show('home'); renderHome(); };
-$('#hoBack').onclick=()=>{ show('home'); renderHome(); };
-$('#govBack').onclick=()=>{ show('home'); renderHome(); };
+safeOn('#subscrim', ()=>show('home'));
+safeOn('#regBack', ()=>{
+  if(isOperatorView()){ show('home'); renderHome(); return; }
+  show('home'); renderHome();
+});
+safeOn('#hoBack', ()=>{ show('home'); renderHome(); });
+safeOn('#govBack', ()=>{ show('home'); renderHome(); });
 
 /* ============ Register view ============ */
 let CUR=null, FILTER='';
 function openRegister(key){
+  const allowed=operatorAllowedKeys();
+  if(allowed && !allowed.includes(key)){
+    toast('هذا السجل غير متاح لدورك — شاشتك فقط');
+    return;
+  }
   CUR=REGMAP[key]; FILTER='';
   $('#regTitle').textContent=CUR.title;
   $('#regAddLbl').textContent=CUR.addLabel||'إضافة';
@@ -1056,7 +1625,15 @@ function openRegister(key){
   show('reg'); renderRegList();
 }
 $('#regSearch').oninput=e=>{ FILTER=e.target.value.trim(); renderRegList(); };
-$('#regAdd').onclick=()=> CUR.isChecklist? openChecklistForm() : openForm(CUR);
+$('#regAdd').onclick=()=>{
+  if(!canWrite(CUR)){ toast(isDeputyReadOnly()?'قراءة فقط':'لا صلاحية إدخال'); return; }
+  CUR.isChecklist? openChecklistForm() : openForm(CUR);
+};
+$('#regScan').onclick=()=>{
+  if(CUR && CUR.isChecklist){ openChecklistForm(); setTimeout(()=>{ const t=$('#f_truck'); if(t) BarcodeScanner.open(v=>{ t.value=v; }); }, 300); }
+  else if($('#f_truck')){ BarcodeScanner.open(v=>{ const t=$('#f_truck'); t.value=v; t.dispatchEvent(new Event('change')); }); }
+  else { scanIntoRegisterField(); }
+};
 $('#regCsv').onclick=()=> exportCsv(CUR);
 
 function recMatches(rec){
@@ -1074,6 +1651,7 @@ function renderRegList(){
     const rec=(DB.reg[CUR.key]||[]).find(x=>String(x._id)===b.dataset.qrid);
     if(rec) showRecordQR(CUR,rec);
   });
+  $('#regBody').querySelectorAll('[data-chain]').forEach(b=>b.onclick=()=>openTruckChain(b.dataset.chain));
 }
 
 function toneBadge(tone,txt,prefix=''){
@@ -1097,6 +1675,8 @@ function recCard(r,rec,i){
   const note = rec.notes? `<div class="note">${esc(rec.notes)}</div>`:'';
   const seq = rec.serial? `#${esc(rec.serial)}` : '';
   const qrBtn = r.qr? `<div class="recact"><button class="qrmini" data-qrid="${esc(rec._id)}">${svg('qr',15)} رمز QR للشاحنة</button></div>`:'';
+  const truck=normTruck(rec.truck);
+  const chainBtn=truck?`<button type="button" class="chain-link" data-chain="${esc(truck)}">${svg('dispatch',14)} سلسلة الشاحنة ${esc(truck)}${chainDotsHtml(truck)}</button>`:'';
   return `<div class="rec" style="animation-delay:${Math.min(i,8)*30}ms">
     <div class="rh">
       <div class="id">${esc(title)} ${seq?`<small>${seq}</small>`:''}</div>
@@ -1104,6 +1684,7 @@ function recCard(r,rec,i){
     </div>
     <div class="kv">${fields}</div>
     ${note}
+    ${chainBtn}
     ${qrBtn}
     <div class="meta">${rec._by?`<span>${svg('user',11)} ${esc(rec._by)}</span>`:''}<span>${svg('cal',11)} ${esc(rec._d||'')}</span></div>
   </div>`;
@@ -1123,32 +1704,67 @@ function renderChecklistList(arr){
         <div style="display:flex;gap:6px;align-items:center;">${toneBadge(tone, yes+' / '+tot)}${rec._t?`<span class="tm">${esc(rec._t)}</span>`:''}</div></div>
       ${rows}
       ${rec.notes?`<div class="note">${esc(rec.notes)}</div>`:''}
+      ${rec.truck?`<button type="button" class="chain-link" data-chain="${esc(rec.truck)}">${svg('dispatch',14)} سلسلة الشاحنة ${esc(rec.truck)}${chainDotsHtml(rec.truck)}</button>`:''}
       <div class="meta"><span>${svg('cal',11)} ${esc(rec.date||rec._d||'')}</span></div>
     </div>`;
   }).join('') : emptyState();
   $('#regBody').innerHTML=`<div class="reclist">${body}</div>`;
+  $('#regBody').querySelectorAll('[data-chain]').forEach(b=>b.onclick=()=>openTruckChain(b.dataset.chain));
 }
 
 /* ============ Sheet / Form ============ */
 const scrim=$('#scrim'), sheet=$('#sheet');
-function openSheet(title){ $('#sheetTitle').textContent=title; scrim.classList.add('on'); sheet.classList.add('on'); }
-function closeSheet(){ scrim.classList.remove('on'); sheet.classList.remove('on'); }
-scrim.onclick=closeSheet; $('#sheetClose').onclick=closeSheet;
+function openSheet(title){ const t=$('#sheetTitle'); if(t) t.textContent=title; if(scrim) scrim.classList.add('on'); if(sheet) sheet.classList.add('on'); }
+function closeSheet(){ if(scrim) scrim.classList.remove('on'); if(sheet) sheet.classList.remove('on'); }
+if(scrim) scrim.onclick=closeSheet;
+safeOn('#sheetClose', closeSheet);
 
+const PhotoCapture={
+  async pick(){
+    try{
+      const P=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Camera;
+      if(P){ const r=await P.getPhoto({quality:65,resultType:'dataUrl',source:'CAMERA',saveToGallery:false});
+        return r.dataUrl||null; }
+    }catch(e){}
+    return new Promise(res=>{
+      const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+      inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f) return res(null);
+        const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.readAsDataURL(f); };
+      inp.click();
+    });
+  }
+};
+function bindPhotoField(id){
+  const hid=$(id), prev=$(id+'_prev'), btn=$(id+'_btn');
+  if(btn) btn.onclick=async()=>{ const u=await PhotoCapture.pick(); if(!u) return; if(hid) hid.value=u; if(prev) prev.innerHTML=`<img class="photo-prev" src="${u}" alt="">`; toast('تم إرفاق الصورة'); };
+}
 function fieldHtml(f){
   const id='f_'+f.n, req=f.req?' <span class="req">*</span>':'';
   let input;
-  if(f.t==='textarea') input=`<textarea id="${id}" data-n="${f.n}"></textarea>`;
+  if(f.t==='photo') input=`<input type="hidden" id="${id}" data-n="${f.n}"><button type="button" class="btn btn-ghost" id="${id}_btn" style="width:100%;justify-content:center">${svg('quality',16)} التقاط / إرفاق صورة</button><div id="${id}_prev"></div>`;
+  else if(f.t==='textarea') input=`<textarea id="${id}" data-n="${f.n}"></textarea>`;
   else if(f.t==='select'){
     input=`<select id="${id}" data-n="${f.n}"><option value="">— اختر —</option>${f.o.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`;
   } else {
     const inputmode = (f.t==='number'||f.t==='tel')?' inputmode="numeric"':'';
     input=`<input id="${id}" data-n="${f.n}" type="${f.t}"${inputmode}>`;
   }
-  return `<div class="field"><label for="${id}">${esc(f.l)}${req}</label>${input}</div>`;
+  const scanBtn = (f.scan || SCAN_FIELDS.includes(f.n)) && f.t!=='textarea' && f.t!=='select'
+    ? `<button type="button" class="btn-scan" data-scan="${id}" title="مسح باركود">${svg('scan',20)}</button>` : '';
+  const inner = scanBtn ? `<div class="scanrow">${input}${scanBtn}</div>` : input;
+  return `<div class="field"><label for="${id}">${esc(f.l)}${req}</label>${inner}</div>`;
+}
+function bindScanButtons(root){
+  (root||document).querySelectorAll('[data-scan]').forEach(btn=>{
+    btn.onclick=()=>{
+      const el=document.getElementById(btn.dataset.scan);
+      if(!el) return;
+      BarcodeScanner.open(v=>{ el.value=v; el.dispatchEvent(new Event('change')); el.dispatchEvent(new Event('blur')); });
+    };
+  });
 }
 function openForm(r){
-  if(!canAccess(r)){ toast('سجل «'+r.title+'» مخصص لـ: '+([...SUPER.slice(0,1),...(r.roles||[])].join('، ')||'الإشراف')+'. غيّر الدور من الإعدادات.'); return; }
+  if(!canWrite(r)){ toast(isDeputyReadOnly()?'دور النائب للقراءة فقط — لا يمكن الإدخال':('سجل «'+r.title+'» مخصص لـ: '+([...SUPER.slice(0,1),...(r.roles||[])].join('، ')||'الإشراف')+'. غيّر الدور من الإعدادات.')); return; }
   // group time/short fields into rows where natural; simple full-width is fine on mobile
   const html = (r.fields||[]).map(fieldHtml).join('');
   $('#sheetBody').innerHTML=html;
@@ -1159,12 +1775,84 @@ function openForm(r){
     if(f.t==='time' && ['time','loadTime','startTime','arrival','exitTime'].includes(f.n)) el.value=nowTime();
     if(f.t==='date') el.value=todayDate();
     if(f.n==='officer' && DB.meta.operator) el.value=DB.meta.operator;
+    if(f.n==='shiftTag' && DB.meta.shift) el.value=DB.meta.shift;
   });
+  (r.fields||[]).filter(f=>f.t==='photo').forEach(f=>bindPhotoField('#f_'+f.n));
+  if(r.key==='export' && prefs().mandatoryBarcodeExport){
+    $('#sheetBody').insertAdjacentHTML('afterbegin','<div class="hint" style="margin-bottom:10px;padding:8px 10px;background:var(--warn-bg);border-radius:9px">يُفضَّل مسح باركود الشاحنة قبل التصدير (زر المسح).</div>');
+  }
+  if(r.key==='dispatch'||r.key==='reception'||r.key==='export'){
+    ['weightEmpty','weightLoaded'].forEach(n=>{
+      const el=$('#f_'+n); if(!el) return;
+      el.addEventListener('input',()=>{
+        const net=calcNet($('#f_weightEmpty')&&$('#f_weightEmpty').value, $('#f_weightLoaded')&&$('#f_weightLoaded').value);
+        let hint=$('#weightNetHint'); if(!hint){ hint=document.createElement('div'); hint.id='weightNetHint'; hint.className='hint'; hint.style.marginTop='6px'; el.closest('.field').appendChild(hint); }
+        hint.textContent=net!=null?('الصافي: '+net.toLocaleString('ar-SA')+' كغ'):'';
+      });
+    });
+    const scaleBtn=document.createElement('button'); scaleBtn.type='button'; scaleBtn.className='btn btn-ghost'; scaleBtn.style.cssText='width:100%;margin-top:6px;font-size:12px;justify-content:center';
+    scaleBtn.innerHTML=svg('reconcile',14)+' قراءة من الميزان (يدوي)';
+    scaleBtn.onclick=()=>{ toast('أدخل الوزن من شاشة الميزان — دعم Bluetooth قريباً'); const w=prompt('الوزن الحالي من الميزان (كغ):'); if(w==null) return;
+      const n=parseKg(w); if(n==null){ toast('رقم غير صالح'); return; }
+      const empty=$('#f_weightEmpty'), loaded=$('#f_weightLoaded');
+      if(loaded && !loaded.value) loaded.value=n; else if(empty && !empty.value) empty.value=n; else if(loaded) loaded.value=n;
+      loaded&&loaded.dispatchEvent(new Event('input'));
+    };
+    const wf=$('#f_weightLoaded'); if(wf && wf.closest('.field')) wf.closest('.field').appendChild(scaleBtn);
+  }
   if(r.autoSerial){ const el=$('#f_serial'); if(el){ const mx=DB.reg[r.key].reduce((a,x)=>Math.max(a, Number(x.serial)||0),0); el.value=mx+1; } }
+  if(r.key==='reconcile'){
+    $('#sheetBody').insertAdjacentHTML('beforeend','<div id="reconCalc" class="hint" style="margin-top:10px;padding:10px;border:1px dashed var(--line2);border-radius:10px;line-height:1.8"></div>');
+    const bind=()=>{ prefillReconcileFromChain($('#f_truck')&&$('#f_truck').value); updateReconcilePanel(); };
+    const tEl=$('#f_truck'); if(tEl){ tEl.addEventListener('change',bind); tEl.addEventListener('blur',bind); }
+    ['dispatchEmpty','dispatchLoaded','receptionEmpty','receptionLoaded'].forEach(n=>{
+      const el=$('#f_'+n); if(el){ el.addEventListener('input',updateReconcilePanel); }
+    });
+    const resEl=$('#f_result'); if(resEl) resEl.addEventListener('change',()=>{ resEl.dataset.userSet='1'; });
+    bind();
+  }
   smartFormAssist(r);
+  bindScanButtons($('#sheetBody'));
+  $('#sheetBody').querySelectorAll('[data-scan]').forEach(btn=>{
+    const orig=btn.onclick;
+    btn.onclick=()=>{
+      BarcodeScanner.open(v=>{
+        const el=document.getElementById(btn.dataset.scan);
+        if(el){ el.value=v; el.dataset.barcodeScanned='1'; el.dispatchEvent(new Event('change')); el.dispatchEvent(new Event('blur')); }
+        if(r.key==='export') window._exportBarcodeOk=true;
+      });
+    };
+  });
   $('#frmCancel').onclick=closeSheet;
   $('#frmSave').onclick=()=>saveForm(r);
   openSheet(r.addLabel||'إضافة سجل');
+}
+function autoCreateReconcileFromReception(rec){
+  if(!prefs().autoReconcile) return;
+  const t=normTruck(rec.truck); if(!t) return;
+  if(latestByTruck('reconcile',t)) return;
+  const dis=latestByTruck('dispatch',t);
+  const dNet=dis?truckNetWeight(dis):null, rNet=truckNetWeight(rec);
+  const diff=(dNet!=null&&rNet!=null)?Math.abs(dNet-rNet):null;
+  const tol=weightTolerance();
+  const row={ truck:t, serial:dis?dis.serial:'', hopper:dis?dis.hopper:'', hold:dis?dis.hold:'',
+    dispatchEmpty:dis?dis.weightEmpty:'', dispatchLoaded:dis?dis.weightLoaded||dis.weight:'',
+    receptionEmpty:rec.weightEmpty, receptionLoaded:rec.weightLoaded,
+    exporterData:dNet!=null?('صافي ترحيل: '+dNet+' كغ'):'', agentData:rNet!=null?('صافي استقبال: '+rNet+' كغ'):'',
+    result:(diff==null||diff<=tol)?'مطابق':'اختلاف',
+    action:diff&&diff>tol?'مطابقة تلقائية — فرق '+diff+' كغ':'مطابقة تلقائية عند الاستقبال',
+    notes:'أُنشئت تلقائياً', _auto:true, _t:nowTime(), _d:todayDate(), _by:DB.meta.operator||'', _id:Date.now()+Math.floor(Math.random()*99) };
+  if(dNet!=null) row._dispatchNet=dNet; if(rNet!=null) row._receptionNet=rNet; if(diff!=null) row.weightDiff=diff;
+  linkChainOnSave(row); DB.reg.reconcile.push(row); saveReg('reconcile'); audit('مطابقة تلقائية','شاحنة '+t);
+}
+function shiftFinanceTotal(){
+  const sh=DB.meta.shift||'', d=todayDate();
+  return (DB.reg.finance||[]).filter(x=>x.approval==='معتمد' && (x._d===d||x.date===d) && (!x.shiftTag||x.shiftTag===sh))
+    .reduce((a,x)=>a+(Number(x.amount)||0),0);
+}
+function dayFinanceTotal(){
+  const d=todayDate();
+  return (DB.reg.finance||[]).filter(x=>x.approval==='معتمد' && (x._d===d||x.date===d)).reduce((a,x)=>a+(Number(x.amount)||0),0);
 }
 
 /* ============ Smart form assist (autocomplete + auto-fill from history) ============ */
@@ -1207,11 +1895,54 @@ function smartFormAssist(r){
       ['driver','destination','hopper','hold','mobile'].forEach(f=>{
         const el=$('#f_'+f); if(el && !el.value && p[f]){ el.value=p[f]; filled++; }
       });
+      if(r.key==='reception'){
+        const disp=latestByTruck('dispatch',tEl.value);
+        if(disp){
+          ['weightEmpty','weightLoaded'].forEach(f=>{
+            const el=$('#f_'+f);
+            if(el && !el.value && disp[f]){ el.value=disp[f]; filled++; }
+            else if(el && !el.value && f==='weightLoaded' && disp.weight) el.value=disp.weight;
+          });
+        }
+      }
       if(filled) toast('عُبّئت بيانات الشاحنة تلقائياً من سجل سابق');
     };
     tEl.addEventListener('change', apply);
     tEl.addEventListener('blur', apply);
   }
+}
+function prefillReconcileFromChain(truck){
+  truck=normTruck(truck); if(!truck) return;
+  const ex=latestByTruck('export',truck), dis=latestByTruck('dispatch',truck), rec=latestByTruck('reception',truck);
+  const set=(id,v)=>{ const el=$(id); if(el && v!=null && v!=='') el.value=v; };
+  if(ex){ set('#f_serial',ex.serial); set('#f_hopper',ex.hopper); set('#f_hold',ex.hold); set('#f_loadTime',ex.loadTime); }
+  if(dis){
+    set('#f_dispatchEmpty',dis.weightEmpty);
+    set('#f_dispatchLoaded',dis.weightLoaded||dis.weight);
+  }
+  if(rec){
+    set('#f_receptionEmpty',rec.weightEmpty);
+    set('#f_receptionLoaded',rec.weightLoaded);
+  }
+  updateReconcilePanel();
+}
+function updateReconcilePanel(){
+  const el=$('#reconCalc'); if(!el) return;
+  const de=$('#f_dispatchEmpty')&&$('#f_dispatchEmpty').value, dl=$('#f_dispatchLoaded')&&$('#f_dispatchLoaded').value;
+  const re=$('#f_receptionEmpty')&&$('#f_receptionEmpty').value, rl=$('#f_receptionLoaded')&&$('#f_receptionLoaded').value;
+  const dNet=calcNet(de,dl), rNet=calcNet(re,rl);
+  let html='<b>ملخص المطابقة التلقائي</b><br>';
+  html+='صافي الترحيل: <b>'+(dNet==null?'—':dNet.toLocaleString('ar-SA')+' كغ')+'</b><br>';
+  html+='صافي الاستقبال: <b>'+(rNet==null?'—':rNet.toLocaleString('ar-SA')+' كغ')+'</b><br>';
+  if(dNet!=null && rNet!=null){
+    const diff=Math.abs(dNet-rNet);
+    html+='فرق الصافي: <b style="color:'+(diff===0?'var(--ok)':'var(--danger)')+'">'+diff.toLocaleString('ar-SA')+' كغ</b>';
+    html+= diff===0?' → <span style="color:var(--ok)">مطابق</span>':' → <span style="color:var(--danger)">اختلاف</span>';
+    const resEl=$('#f_result'); if(resEl && !resEl.dataset.userSet) resEl.value=diff===0?'مطابق':'اختلاف';
+    const exEl=$('#f_exporterData'); if(exEl && !exEl.value) exEl.value='وزن صافي ترحيل: '+dNet+' كغ (فارغ '+de+' · محمّل '+dl+')';
+    const agEl=$('#f_agentData'); if(agEl && !agEl.value) agEl.value='وزن صافي استقبال: '+rNet+' كغ (فارغ '+re+' · محمّل '+rl+')';
+  }
+  el.innerHTML=html;
 }
 function saveForm(r){
   const rec={};
@@ -1225,6 +1956,16 @@ function saveForm(r){
 
   if(r.key==='export'){
     const t=(rec.truck||'').trim();
+    if(prefs().mandatoryBarcodeExport){
+      const tEl=$('#f_truck');
+      if(!window._exportBarcodeOk && !(tEl&&tEl.dataset.barcodeScanned)){
+        if(!govGate('قاعدة الباركود: يُفضَّل مسح باركود الشاحنة قبل التصدير.\nالمتابعة بدون مسح؟')){ toast('امسح باركود الشاحنة أولاً'); return; }
+        mark('بدون مسح باركود');
+      }
+    }
+    window._exportBarcodeOk=false;
+    const exNet=calcNet(rec.weightEmpty,rec.weightLoaded);
+    if(exNet!=null){ if(exNet<=0){ toast('الوزن المحمّل يجب أن يكون أكبر من الفارغ'); return; } rec._netWeight=exNet; }
     if(!rec.officer){ const el=$('#f_officer'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('سجّل اسم مسؤول التصدير (لا يُترك الهوبر بلا مسؤول)'); return; }
     const inspected = t && (DB.reg.checklist||[]).some(x=>(x.truck||'').trim()===t);
     if(!inspected){
@@ -1244,6 +1985,10 @@ function saveForm(r){
       if(!govGate('لا يوجد تصدير مسجّل للشاحنة '+(t||'—')+'.\nلا ترحيل بدون تصدير وتسجيل.')){ toast('سجّل التصدير أولاً'); return; }
       mark('ترحيل بدون تصدير'); logException('ترحيل الشاحنة '+t+' بدون تصدير مسبق','سلسلة الشاحنة');
     }
+    const net=calcNet(rec.weightEmpty,rec.weightLoaded);
+    if(net==null){ toast('أدخل الوزن الفارغ والوزن المحمّل'); return; }
+    if(net<=0){ toast('الوزن المحمّل يجب أن يكون أكبر من الوزن الفارغ'); return; }
+    rec._netWeight=net;
   }
   if(r.key==='reception'){
     const t=(rec.truck||'').trim();
@@ -1251,6 +1996,53 @@ function saveForm(r){
     if(!dispatched){
       if(!govGate('لا يوجد أمر ترحيل للشاحنة '+(t||'—')+'.\nلا استقبال بدون أمر ترحيل.')){ toast('سجّل أمر الترحيل أولاً'); return; }
       mark('استقبال بدون ترحيل'); logException('استقبال الشاحنة '+t+' بدون أمر ترحيل','سلسلة الشاحنة');
+    }
+    const net=calcNet(rec.weightEmpty,rec.weightLoaded);
+    if(net==null){ toast('أدخل الوزن الفارغ والوزن المحمّل'); return; }
+    if(net<=0){ toast('الوزن المحمّل يجب أن يكون أكبر من الوزن الفارغ'); return; }
+    rec._netWeight=net;
+    if(!rec.qty) rec.qty=String(net);
+    const disp=latestByTruck('dispatch',t);
+    const dNet=disp?truckNetWeight(disp):null;
+    const tol=weightTolerance(), wdiff=dNet!=null?Math.abs(net-dNet):0;
+    if(dNet!=null && wdiff>tol){
+      if(!govGate('فرق الوزن الصافي بين الترحيل ('+dNet+' كغ) والاستقبال ('+net+' كغ) = '+wdiff+' كغ (الحد المسموح '+tol+' كغ).\nهل تُوثَّق المتابعة؟')){ toast('صحّح الأوزان أو وثّق التجاوز'); return; }
+      mark('فرق وزن '+wdiff+' كغ'); logException('استقبال الشاحنة '+t+' بفرق وزن عن الترحيل','مطابقة الأوزان');
+    }
+    autoCreateReconcileFromReception(rec);
+  }
+  if(r.key==='reconcile'){
+    const dNet=calcNet(rec.dispatchEmpty,rec.dispatchLoaded);
+    const rNet=calcNet(rec.receptionEmpty,rec.receptionLoaded);
+    if(dNet==null || rNet==null){ toast('أكمل أوزان الترحيل والاستقبال للمطابقة'); return; }
+    rec._dispatchNet=dNet; rec._receptionNet=rNet;
+    rec.weightDiff=Math.abs(dNet-rNet);
+    const tol=weightTolerance();
+    if(rec.result==='مطابق' && rec.weightDiff>tol){
+      if(!govGate('النتيجة «مطابق» لكن فرق الصافي '+rec.weightDiff+' كغ (الحد '+tol+' كغ).\nتأكيد المطابقة؟')){ toast('غيّر النتيجة إلى اختلاف أو صحّح الأوزان'); return; }
+    }
+    if(rec.weightDiff<=tol && rec.result==='اختلاف' && !rec._override) rec.result='مطابق';
+    if(!rec.exporterData) rec.exporterData='صافي ترحيل: '+dNet+' كغ';
+    if(!rec.agentData) rec.agentData='صافي استقبال: '+rNet+' كغ';
+    if(!rec.action && rec.weightDiff>0) rec.action='معالجة فرق وزن '+rec.weightDiff+' كغ';
+  }
+  if(r.key==='finance'){
+    const empCats=['راتب/أجر موظف ميناء','بدل وردية موظف','مكافأة موظف ميناء'];
+    if(empCats.includes(rec.expenseCat) && !rec.employeeName){
+      const el=$('#f_employeeName'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('أدخل اسم الموظف لصرف الرواتب والبدلات'); return;
+    }
+    if(!rec.amount || Number(rec.amount)<=0){ const el=$('#f_amount'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('أدخل مبلغ الصرف'); return; }
+    if(!rec.shiftTag) rec.shiftTag=DB.meta.shift||'';
+    const amt=Number(rec.amount)||0, capD=Number(prefs().dailySpendCap)||0, capS=Number(prefs().shiftSpendCap)||0;
+    if(rec.approval==='معتمد'){
+      if(capD>0 && dayFinanceTotal()+amt>capD){
+        if(!govGate('تجاوز سقف الصرف اليومي ('+capD.toLocaleString('ar-SA')+' ريال).')){ toast('تجاوز سقف الصرف اليومي'); return; }
+        mark('تجاوز سقف يومي');
+      }
+      if(capS>0 && shiftFinanceTotal()+amt>capS){
+        if(!govGate('تجاوز سقف صرف الوردية ('+capS.toLocaleString('ar-SA')+' ريال).')){ toast('تجاوز سقف الوردية'); return; }
+        mark('تجاوز سقف وردية');
+      }
     }
   }
   if(r.key==='violations'){
@@ -1261,30 +2053,62 @@ function saveForm(r){
     } else if(!rec.notifyTime){ const el=$('#f_notifyTime'); if(el){el.focus();el.style.borderColor='var(--danger)';} toast('سجّل وقت إبلاغ نائب الرئيس'); return; }
   }
 
+  linkChainOnSave(rec);
   DB.reg[r.key].push(rec); saveReg(r.key);
-  closeSheet(); renderRegList(); toast(rec._override?'حُفظ مع تجاوز موثّق':'تم حفظ السجل');
+  audit('حفظ سجل', (REGMAP[r.key]&&REGMAP[r.key].title)+' · '+(rec.truck||rec._id||''));
+  closeSheet(); renderRegList(); renderHome();
+  toast(rec._override?'حُفظ مع تجاوز موثّق':'تم حفظ السجل');
 }
 
 /* Checklist form */
+function initSignaturePad(){
+  const c=$('#sig_canvas'); if(!c) return null;
+  const ctx=c.getContext('2d'); ctx.strokeStyle='#142C40'; ctx.lineWidth=2; let drawing=false;
+  const pos=e=>{ const r=c.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return {x:(t.clientX-r.left)*(c.width/r.width), y:(t.clientY-r.top)*(c.height/r.height)}; };
+  const down=e=>{ drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); };
+  const move=e=>{ if(!drawing) return; const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); };
+  const up=()=>{ drawing=false; };
+  c.addEventListener('mousedown',down); c.addEventListener('mousemove',move); c.addEventListener('mouseup',up); c.addEventListener('mouseleave',up);
+  c.addEventListener('touchstart',down,{passive:false}); c.addEventListener('touchmove',move,{passive:false}); c.addEventListener('touchend',up);
+  return { data:()=>c.toDataURL('image/png'), clear:()=>{ ctx.clearRect(0,0,c.width,c.height); } };
+}
 function openChecklistForm(){
   const r=CUR;
-  if(!canAccess(r)){ toast('فحص الجودة مخصص لمسؤول الفحص والجودة. غيّر الدور من الإعدادات.'); return; }
+  if(!canWrite(r)){ toast(isDeputyReadOnly()?'دور النائب للقراءة فقط':'فحص الجودة مخصص لمسؤول الفحص والجودة.'); return; }
   const head=`<div class="field"><label>اسم الفاحص</label><input id="f_inspector" value="${esc(DB.meta.operator||'')}"></div>
-    <div class="frow"><div class="field"><label>رقم الشاحنة</label><input id="f_truck" inputmode="numeric"></div>
+    <div class="frow"><div class="field"><label>رقم الشاحنة <span class="req">*</span></label>
+      <div class="scanrow"><input id="f_truck" inputmode="numeric" placeholder="امسح الباركود أو أدخل الرقم">
+      <button type="button" class="btn-scan" data-scan="f_truck" title="مسح باركود الشاحنة">${svg('scan',20)}</button></div></div>
     <div class="field"><label>التاريخ</label><input id="f_date" type="date" value="${todayDate()}"></div></div>
-    <div style="font-size:12px;color:var(--ink2);margin:4px 2px 10px;font-weight:600;">بنود الفحص</div>`;
-  const items=r.items.map((it,i)=>`<label class="check"><input type="checkbox" data-ci="${i}" checked><span>${esc(it)}</span></label>`).join('');
-  const tail=`<div class="field" style="margin-top:12px"><label>ملاحظات</label><textarea id="f_notes"></textarea></div>`;
+    <div style="font-size:12px;color:var(--ink2);margin:4px 2px 10px;font-weight:600;">مرحلة الفحص — بنود التحقق</div>`;
+  const clItems=checklistItems();
+  const items=clItems.map((it,i)=>`<label class="check"><input type="checkbox" data-ci="${i}" checked><span>${esc(it)}</span></label>`).join('');
+  const tail=`<div class="field"><label>توقيع الفاحص الرقمي</label><div class="sig-pad"><canvas id="sig_canvas" width="480" height="100"></canvas></div>
+    <button type="button" class="btn btn-ghost" id="sig_clear" style="width:100%;margin-top:6px;font-size:12px">مسح التوقيع</button></div>
+    <div class="field" style="margin-top:12px"><label>صورة الفحص</label><input type="hidden" id="f_insp_photo"><button type="button" class="btn btn-ghost" id="f_insp_photo_btn" style="width:100%;justify-content:center">${svg('quality',16)} التقاط صورة</button><div id="f_insp_photo_prev"></div></div>
+    <div class="field" style="margin-top:12px"><label>ملاحظات</label><textarea id="f_notes"></textarea></div>`;
   $('#sheetBody').innerHTML=head+items+tail;
   $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="frmCancel" style="flex:.6">إلغاء</button><button class="btn btn-pri" id="frmSave">حفظ الفحص</button>`;
   $('#frmCancel').onclick=closeSheet;
+  bindScanButtons($('#sheetBody'));
+  const sig=initSignaturePad();
+  $('#sig_clear').onclick=()=>sig&&sig.clear();
+  bindPhotoField('#f_insp_photo');
+  $('#f_insp_photo_btn').onclick=async()=>{ const u=await PhotoCapture.pick(); if(u){ $('#f_insp_photo').value=u; $('#f_insp_photo_prev').innerHTML=`<img class="photo-prev" src="${u}">`; } };
   $('#frmSave').onclick=()=>{
-    const items=r.items.map((it,i)=>({label:it, ok:$(`[data-ci="${i}"]`).checked}));
-    const rec={inspector:$('#f_inspector').value.trim(), truck:$('#f_truck').value.trim(),
-      date:$('#f_date').value, notes:$('#f_notes').value.trim(), items, _t:nowTime(), _d:todayDate(), _id:Date.now()};
-    DB.reg[r.key].push(rec); saveReg(r.key); closeSheet(); renderRegList(); toast('تم حفظ الفحص');
+    const truck=$('#f_truck').value.trim();
+    if(!truck){ $('#f_truck').focus(); toast('امسح باركود الشاحنة أو أدخل رقمها'); return; }
+    const items=clItems.map((it,i)=>({label:it, ok:$(`[data-ci="${i}"]`).checked}));
+    const rec={inspector:$('#f_inspector').value.trim(), truck,
+      date:$('#f_date').value, notes:$('#f_notes').value.trim(), items,
+      signature:sig?sig.data():'', inspectionPhoto:$('#f_insp_photo').value||'',
+      _t:nowTime(), _d:todayDate(), _id:Date.now(), _by:DB.meta.operator||''};
+    linkChainOnSave(rec);
+    DB.reg[r.key].push(rec); saveReg(r.key); audit('فحص شاحنة',truck);
+    closeSheet(); renderRegList(); renderHome();
+    toast('تم حفظ مرحلة الفحص — يمكن التصدير الآن');
   };
-  openSheet('فحص قائمة الجودة');
+  openSheet('مرحلة الفحص — قائمة الجودة');
 }
 
 /* ============ Settings ============ */
@@ -1312,6 +2136,31 @@ function openSettings(){
     <div class="setgrp"><div class="gh">ضوابط التشغيل</div><div style="padding:12px 14px 14px">
       <div class="field"><label>الهوبر المعتمد (أرقام مفصولة بفواصل)</label><input id="s_hop" value="${esc(m.hoppers)}" placeholder="مثال: 1، 2، 3">
         <div class="hint">عند تعبئته، يُمنع التحميل من هوبر خارج القائمة إلا بتجاوز موثّق. اتركه فارغاً لتعطيل التحقق.</div></div>
+      <div class="frow">
+        <div class="field"><label>فرق الوزن المسموح (كغ)</label><input id="s_wtol" type="number" value="${esc(prefs().weightToleranceKg)}"></div>
+        <div class="field"><label>أرشفة بعد (يوم) — 0=معطّل</label><input id="s_ret" type="number" value="${esc(prefs().retentionDays)}"></div>
+      </div>
+      <div class="frow">
+        <div class="field"><label>سقف صرف يومي (ريال) — 0=معطّل</label><input id="s_capd" type="number" value="${esc(prefs().dailySpendCap)}"></div>
+        <div class="field"><label>سقف صرف الوردية (ريال)</label><input id="s_caps" type="number" value="${esc(prefs().shiftSpendCap)}"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="s_barcode" ${prefs().mandatoryBarcodeExport?'checked':''}><span>إلزام مسح باركود قبل التصدير</span></label>
+      <label class="check"><input type="checkbox" id="s_autorec" ${prefs().autoReconcile?'checked':''}><span>إنشاء مطابقة تلقائياً عند الاستقبال</span></label>
+      <label class="check"><input type="checkbox" id="s_deputyro" ${prefs().deputyReadOnly?'checked':''}><span>نائب الرئيس — قراءة فقط (بدون إدخال)</span></label>
+      <label class="check"><input type="checkbox" id="s_opsync" ${prefs().mandatoryOperatorSync?'checked':''}><span>إلزام المزامنة على أجهزة الموظفين</span></label>
+      <label class="check"><input type="checkbox" id="s_partial" ${prefs().partialSync?'checked':''}><span>مزامنة جزئية حسب دور الموظف</span></label>
+    </div></div>
+    <div class="setgrp"><div class="gh">واجهة وتجربة الاستخدام</div><div style="padding:12px 14px 14px">
+      <label class="check"><input type="checkbox" id="s_dark" ${prefs().darkMode?'checked':''}><span>الوضع الداكن</span></label>
+      <label class="check"><input type="checkbox" id="s_glove" ${prefs().gloveMode?'checked':''}><span>وضع القفازات (أزرار أكبر)</span></label>
+      <label class="check"><input type="checkbox" id="s_alertv" ${prefs().alertVibrate?'checked':''}><span>اهتزاز عند فجوات السلسلة</span></label>
+      <label class="check"><input type="checkbox" id="s_alerts" ${prefs().alertSound?'checked':''}><span>تنبيه صوتي عند فجوات السلسلة</span></label>
+      <div class="field" style="margin-top:8px"><label>قفل التطبيق (PIN — اتركه فارغاً للإلغاء)</label><input id="s_pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••"></div>
+      <div class="field"><label>بنود الفحص (سطر لكل بند — فارغ=افتراضي)</label><textarea id="s_checklist" rows="4" placeholder="اتركه فارغاً لاستخدام البنود الافتراضية">${esc((prefs().checklistItems||[]).join('\n'))}</textarea></div>
+    </div></div>
+    <div class="setgrp"><div class="gh">سجل التدقيق والأمان</div><div style="padding:12px 14px 14px">
+      <button class="btn btn-ghost" id="s_audit" style="width:100%;margin-bottom:8px;justify-content:center">عرض سجل التدقيق (${(DB.auditLog||[]).length})</button>
+      <button class="btn btn-ghost" id="s_fails" style="width:100%;justify-content:center">محاولات دخول فاشلة (${(DB.loginFails||[]).length})</button>
     </div></div>
     <div class="setgrp"><div class="gh">مشاركة التطبيق (QR)</div><div style="padding:12px 14px 14px">
       <div class="field"><label>رابط التطبيق</label><input id="s_url" value="${esc(location.href)}">
@@ -1332,14 +2181,17 @@ function openSettings(){
         <button class="btn btn-ghost" id="sy_qr" style="flex:1;justify-content:center">QR للمشاركة</button>
       </div>
       <div class="hint" style="margin-top:10px;line-height:1.85">
-        الإعداد مرة واحدة: ١) أنشئ مشروع Firebase مجاني وفعّل <b>Realtime Database</b>. ٢) من Authentication فعّل <b>Email/Password</b> وأنشئ حساباً واحداً للمزامنة. ٣) اضبط قواعد القاعدة على: <span class="mono">{".read":"auth!=null",".write":"auth!=null"}</span>. ٤) املأ الرابط ومفتاح الويب وبريد/كلمة سر الحساب ورمز الفريق هنا، وضع نفسها في كل الأجهزة (زر QR للمشاركة).
+        الإعداد مرة واحدة: ١) أنشئ مشروع Firebase مجاني وفعّل <b>Realtime Database</b>. ٢) من Authentication فعّل <b>Email/Password</b> وأنشئ حساباً واحداً للمزامنة. ٣) اضبط قواعد القاعدة على: <span class="mono">{".read":"auth!=null",".write":"auth!=null"}</span>. ٤) املأ الرابط ومفتاح الويب وبريد/كلمة سر الحساب ورمز الفريق هنا، وضع نفسها في كل الأجهزة (زر QR للمشاركة). <b>المستخدمون يُزامَنون تلقائياً</b> — الموظف لا يحتاج QR إذا كانت المزامنة مفعّلة.
         <br>اترك حقول المصادقة فارغة لاستخدام «وضع الاختبار» المفتوح (غير آمن). السجلات تُدمج ولا تُحذف.
       </div>
     </div></div>
     <div class="setgrp"><div class="gh">البيانات والتخزين</div><div style="padding:12px 14px 14px">
       <div id="s_storage" class="hint" style="margin-bottom:9px">حالة التخزين: —</div>
+      <div class="hint" style="margin-bottom:8px">مزامنة معلّقة: <b>${(DB.syncQueue||[]).length}</b> · آخر نسخ: ${esc(m.lastBackupDate||'—')}</div>
       <button class="btn btn-ghost" id="s_selftest" style="width:100%;margin-bottom:9px;justify-content:center">فحص حفظ البيانات الآن</button>
-      <button class="btn btn-ghost" id="s_export" style="width:100%;margin-bottom:9px;justify-content:center">تصدير كل السجلات (CSV)</button>
+      <button class="btn btn-ghost" id="s_export" style="width:100%;margin-bottom:9px;justify-content:center">تصدير كل السجلات (Excel/CSV)</button>
+      <button class="btn btn-ghost" id="s_backup" style="width:100%;margin-bottom:9px;justify-content:center">نسخ احتياطي مشفّر (JSON)</button>
+      <button class="btn btn-ghost" id="s_restore" style="width:100%;margin-bottom:9px;justify-content:center">استعادة من نسخة احتياطية</button>
       <button class="btn" id="s_reset" style="width:100%;background:var(--danger-bg);color:var(--danger);justify-content:center">تصفير كل البيانات</button>
     </div></div>
     <div class="setgrp"><div class="gh">الإصدار والاعتماد</div><div style="padding:12px 14px 14px">
@@ -1355,11 +2207,25 @@ function openSettings(){
   $('#setCancel').onclick=closeSheet;
   $('#s_logout').onclick=doLogout;
   if(adminOnly){
-  $('#setSave').onclick=()=>{
+  $('#setSave').onclick=async()=>{
     DB.meta.ship=$('#s_ship').value.trim()||'—'; DB.meta.port=$('#s_port').value.trim()||'—';
     DB.meta.startDate=$('#s_date').value; DB.meta.shift=$('#s_shift').value;
     DB.meta.hoppers=$('#s_hop').value.trim(); DB.meta.approvedBy=$('#s_appr').value.trim();
-    applySession();  // keep operator/role from the logged-in account
+    const cl=$('#s_checklist').value.trim().split(/\n/).map(s=>s.trim()).filter(Boolean);
+    const pin=$('#s_pin').value.trim();
+    let appPinHash=prefs().appPinHash;
+    if(pin) appPinHash=await hashPass(pin);
+    const p=Object.assign({}, prefs(), {
+      weightToleranceKg:Number($('#s_wtol').value)||50, retentionDays:Number($('#s_ret').value)||0,
+      dailySpendCap:Number($('#s_capd').value)||0, shiftSpendCap:Number($('#s_caps').value)||0,
+      mandatoryBarcodeExport:$('#s_barcode').checked, autoReconcile:$('#s_autorec').checked,
+      deputyReadOnly:$('#s_deputyro').checked, mandatoryOperatorSync:$('#s_opsync').checked,
+      partialSync:$('#s_partial').checked, darkMode:$('#s_dark').checked, gloveMode:$('#s_glove').checked,
+      alertVibrate:$('#s_alertv').checked, alertSound:$('#s_alerts').checked,
+      checklistItems:cl.length?cl:null, appPinHash
+    });
+    DB.meta.prefs=p; applyPrefs();
+    applySession();
     const syUrl=$('#sy_url').value.trim().replace(/\/+$/,''), syTeam=$('#sy_team').value.trim(), syEn=$('#sy_en').checked;
     Sync.save({ url:syUrl, team:syTeam, enabled: syEn && !!syUrl && !!syTeam,
       apiKey:$('#sy_key').value.trim(), email:$('#sy_email').value.trim(), password:$('#sy_pass').value });
@@ -1391,7 +2257,11 @@ function openSettings(){
     const el=$('#s_storage'); if(el) el.innerHTML='حالة التخزين: <b style="color:'+(r.ok?'var(--ok)':'var(--danger)')+'">'+(r.ok?'يعمل ✓':'لا يعمل ✗')+'</b> — '+esc(backendName(r.backend));
     toast(r.ok?('الحفظ يعمل · '+backendName(r.backend)):'تعذّر الحفظ على هذا الجهاز');
   };
-  $('#s_export').onclick=exportAll;
+  $('#s_export').onclick=exportAllExcel;
+  $('#s_backup').onclick=exportEncryptedBackup;
+  $('#s_restore').onclick=importEncryptedBackup;
+  $('#s_audit').onclick=openAuditLog;
+  $('#s_fails').onclick=openLoginFailLog;
   $('#s_qr').onclick=()=>{ const u=$('#s_url').value.trim(); if(!u){ toast('أدخل الرابط أولاً'); return; } showQR('رمز فتح التطبيق', u, 'app_link'); };
   $('#s_reset').onclick=async()=>{
     if(!confirm('سيتم حذف كل السجلات نهائياً. متابعة؟')) return;
@@ -1401,7 +2271,7 @@ function openSettings(){
   } /* end adminOnly */
   openSheet('الإعدادات');
 }
-$('#openSettings').onclick=openSettings;
+safeOn('#openSettings', openSettings);
 
 /* ============ CSV export ============ */
 function downloadCsv(name, rows){
@@ -1453,7 +2323,9 @@ function qrPayload(r,rec){
     if(rec.orderNo)L.push('أمر: '+rec.orderNo);
     if(rec.truck)L.push('شاحنة: '+rec.truck);
     if(rec.destination)L.push('وجهة: '+rec.destination);
-    if(rec.weight)L.push('كمية: '+rec.weight);
+    if(rec.weightEmpty||rec.weightLoaded)L.push('وزن: فارغ '+rec.weightEmpty+' · محمّل '+rec.weightLoaded);
+    else if(rec.weight)L.push('كمية: '+rec.weight);
+    const dn=truckNetWeight(rec); if(dn!=null)L.push('صافي: '+dn+' كغ');
     if(rec.exitTime)L.push('خروج: '+rec.exitTime);
     if(rec.hopper||rec.hold)L.push('هوبر: '+(rec.hopper||'-')+' | خن: '+(rec.hold||'-'));
     if(rec.officer)L.push('مسؤول: '+rec.officer);
@@ -1495,6 +2367,11 @@ function openHandover(){
   const ovr=Object.values(DB.reg).reduce((a,arr)=>a+arr.filter(x=>x&&x._override).length,0);
   const leaderCases=diffs + DB.reg.violations.length + ovr;
   const m=DB.meta;
+  const prev=DB.handovers.length? DB.handovers[DB.handovers.length-1] : null;
+  const cmp=prev?`<div class="report" style="margin-top:14px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">مقارنة مع الوردية السابقة (${esc(prev.shift)} · ${esc(prev._d)})</div>
+    <div class="rline"><span class="k">محمّلة</span><span class="v">${c('export')} <small style="color:var(--ink3)">(كانت ${prev.counts?prev.counts.export:'—'})</small></span></div>
+    <div class="rline"><span class="k">مرحّلة</span><span class="v">${c('dispatch')} <small style="color:var(--ink3)">(كانت ${prev.counts?prev.counts.dispatch:'—'})</small></span></div>
+    <div class="rline"><span class="k">مستلمة</span><span class="v">${c('reception')} <small style="color:var(--ink3)">(كانت ${prev.counts?prev.counts.reception:'—'})</small></span></div></div>`:'';
   $('#hoBody').innerHTML=`
     <div class="report">
       <h3>محضر تسليم واستلام الوردية</h3>
@@ -1510,7 +2387,7 @@ function openHandover(){
       <div class="rline"><span class="k">وقائع سجل الحقائق</span><span class="v">${c('incidents')}</span></div>
       <div class="rline"><span class="k">اختلافات المطابقة المستقلة</span><span class="v" style="color:${diffs?'var(--danger)':'var(--ok)'}">${diffs}</span></div>
       <div class="rline"><span class="k">المخالفات التشغيلية</span><span class="v" style="color:${c('violations')?'var(--danger)':'var(--ok)'}">${c('violations')}</span></div>
-      <div class="rline"><span class="k">سجلات مالية معلقة</span><span class="v" style="color:${pendFin?'var(--warn)':'var(--ok)'}">${pendFin}</span></div>
+      <div class="rline"><span class="k">صرف موظفين/ميناء معلّق</span><span class="v" style="color:${pendFin?'var(--warn)':'var(--ok)'}">${pendFin}</span></div>
       <div class="rline"><span class="k">تجاوزات استثنائية موثّقة</span><span class="v" style="color:${ovr?'var(--danger)':'var(--ok)'}">${ovr}</span></div>
       <div class="rline"><span class="k">حالات تحتاج قرار رئيس الفريق</span><span class="v" style="color:${leaderCases?'var(--danger)':'var(--ok)'}">${leaderCases}</span></div>
       <div class="rline"><span class="k">المسؤول المناوب</span><span class="v">${esc(m.operator||'—')}</span></div>
@@ -1522,9 +2399,10 @@ function openHandover(){
         <div class="field"><label>اسم المستلم <span style="color:var(--danger)">*</span></label><input id="ho_to"></div>
       </div>
       <button class="btn btn-pri" id="ho_close" style="width:100%;margin-bottom:9px">اعتماد وإغلاق الوردية</button>
+      <button class="btn btn-ghost" id="ho_wa" style="width:100%;margin-bottom:9px">مشاركة واتساب</button>
       <button class="btn btn-ghost" style="width:100%" onclick="window.print()">طباعة / حفظ التقرير PDF</button>
       ${DB.handovers.length?`<div class="hint" style="text-align:center;margin-top:10px">آخر إغلاق: ${esc(DB.handovers[DB.handovers.length-1]._d)} ${esc(DB.handovers[DB.handovers.length-1]._t)} — ${esc(DB.handovers[DB.handovers.length-1].shift)}</div>`:''}
-    </div>
+    </div>${cmp}
     <div class="report" style="margin-top:14px;text-align:center">
       <div style="font-size:12px;color:var(--ink2);margin-bottom:12px;font-weight:600">رمز ملخص الوردية — للمسح من التقرير المطبوع</div>
       <div class="qrimg" id="hoQr" style="margin:0 auto"><div class="qrload">جارٍ توليد الرمز…</div></div>
@@ -1537,6 +2415,7 @@ function openHandover(){
   } else {
     const el=$('#hoQr'); if(el) el.innerHTML='<div class="qrerr">تعذّر تحميل مولّد الرمز<br>(تحقق من الاتصال)</div>';
   }
+  $('#ho_wa').onclick=()=>shareText('تسليم وردية', summary);
   $('#ho_close').onclick=async()=>{
     const from=$('#ho_from').value.trim(), to=$('#ho_to').value.trim(), sm=$('#ho_summary').value.trim();
     if(!from||!to){ toast('سجّل اسم المسلّم والمستلم لإغلاق الوردية'); return; }
@@ -1600,8 +2479,118 @@ const GOV = [
     ['أي تعديل على نماذج البرنامج أو قواعده يُعتمد من رئيس الفريق ونائبه.','on'],
     ['يُوثَّق رقم الإصدار وتاريخ آخر تعديل للبرنامج.','on'],
     ['البرنامج وثيقة تشغيلية داخلية تُستخدم لأغراض العملية فقط.','on']
+  ]},
+  { t:'ترابط السجلات وسلسلة الشاحنة', rules:[
+    ['كل شاحنة تُربَط برقم واحد عبر السجلات: فحص ← تصدير ← ترحيل ← استقبال.','on'],
+    ['عند الحفظ يُوثَّق ترابط السجل بسلسلة الشاحنة تلقائياً (_links).','on'],
+    ['لوحة الامتثال تعرض نسبة السلاسل المكتملة والفجوات.','on'],
+    ['زر «سلسلة الشاحنة» يعرض كل السجلات المرتبطة في خط زمني واحد.','on'],
+    ['لا يُقبل تخطي مرحلة إلزامية إلا بتجاوز موثّق في سجل الحقائق.','on'],
+    ['المخالفات والمطابقة تُربَط بنفس رقم الشاحنة للتدقيق اللاحق.','on']
+  ]},
+  { t:'مطابقة الأوزان (فارغ / محمّل)', rules:[
+    ['يُسجَّل عند الترحيل: الوزن فارغ والوزن محمّل (كغ) ويُحسب الصافي تلقائياً.','on'],
+    ['يُسجَّل عند الاستقبال: الوزن فارغ والوزن محمّل (كغ) ويُقارَن بصافي الترحيل.','on'],
+    ['المطابقة المستقلة تجلب الأوزان من السلسلة وتُظهر فرق الصافي.','on'],
+    ['أي فرق وزن بين الترحيل والاستقبال يتطلب توثيقاً أو تجاوزاً معتمداً.','on'],
+    ['حد فرق الوزن المسموح قابل للضبط من الإعدادات.','on']
+  ]},
+  { t:'الأمان والتدقيق والنسخ', rules:[
+    ['سجل تدقيق يوثّق كل حفظ ونسخ احتياطي واستعادة.','on'],
+    ['محاولات الدخول الفاشلة تُسجَّل للمراجعة.','on'],
+    ['قفل التطبيق برمز PIN اختياري من الإعدادات.','on'],
+    ['نسخ احتياطي يومي تلقائي واستعادة من ملف JSON.','on'],
+    ['أرشفة السجلات القديمة حسب سياسة الاحتفاظ.','on']
+  ]},
+  { t:'التقارير والمشاركة', rules:[
+    ['تقرير الوردية PDF وملخص واتساب من شاشة التسليم.','on'],
+    ['تقرير مالي شهري وتصدير Excel موحّد لكل السجلات.','on'],
+    ['PDF لسلسلة الشاحنة من عرض الترابط.','on'],
+    ['مقارنة أرقام الوردية الحالية بالسابقة عند التسليم.','on']
+  ]},
+  { t:'تجربة المستخدم المتقدمة', rules:[
+    ['الوضع الداكن ووضع القفازات من الإعدادات.','on'],
+    ['بحث عالمي برقم الشاحنة وتدفق «شاحنة جديدة».','on'],
+    ['توقيع رقمي وصور فحص في مرحلة الفحص.','on'],
+    ['تنبيه صوتي/اهتزاز عند فجوات سلسلة الشاحنات.','on']
   ]}
 ];
+function openTruckChain(truck){
+  truck=normTruck(truck);
+  if(!truck){ toast('لا يوجد رقم شاحنة'); return; }
+  const stages=chainStageStatus(truck);
+  const chain=buildTruckChain(truck);
+  const complete=isChainComplete(truck);
+  const steps=stages.map(s=>{
+    const sum=s.rec?chainSummaryLine(s.rec,REGMAP[s.key]):'لم يُسجَّل بعد';
+    return `<div class="chain-step ${s.tone}">
+      <div class="node">${svg(s.icon,16)}</div>
+      <div class="body"><div class="bl">${esc(s.label)} · <span class="badge ${s.tone==='ok'?'b-ok':(s.tone==='warn'?'b-warn':'b-danger')}">${esc(s.state)}</span></div>
+      <div class="bs">${esc(sum)}${s.rec&&s.rec._by?' · '+esc(s.rec._by):''}${s.rec&&s.rec._d?' · '+esc(s.rec._d):''}</div>
+      ${s.rec?`<button type="button" class="btn btn-ghost" data-goto="${s.key}" style="margin-top:8px;padding:6px 10px;font-size:12px">فتح السجل</button>`:''}
+      </div></div>`;
+  }).join('');
+  let extra='';
+  if(chain.violations&&chain.violations.length){
+    extra+=`<div class="hint" style="margin:10px 0 6px;font-weight:600">مخالفات مرتبطة (${chain.violations.length})</div>`;
+    extra+=chain.violations.slice(0,3).map(v=>`<div class="rline"><span class="k">${esc(v.vioType||'مخالفة')}</span><span class="v">${esc(v.date||v._d||'')}</span></div>`).join('');
+  }
+  if(chain.reconcile){
+    const rc=chain.reconcile;
+    extra+=`<div class="rline" style="margin-top:8px"><span class="k">مطابقة</span><span class="v">${esc(rc.result||'—')}</span></div>`;
+    if(rc._dispatchNet!=null||rc._receptionNet!=null){
+      extra+=`<div class="rline"><span class="k">صافي ترحيل / استقبال</span><span class="v">${esc(rc._dispatchNet||'—')} / ${esc(rc._receptionNet||'—')} كغ</span></div>`;
+    }
+  }
+  const dis=chain.dispatch, recp=chain.reception;
+  if(dis && truckNetWeight(dis)!=null){
+    extra+=`<div class="rline"><span class="k">وزن الترحيل</span><span class="v">فارغ ${esc(dis.weightEmpty||'—')} · محمّل ${esc(dis.weightLoaded||dis.weight||'—')} · صافي ${truckNetWeight(dis)} كغ</span></div>`;
+  }
+  if(recp && truckNetWeight(recp)!=null){
+    extra+=`<div class="rline"><span class="k">وزن الاستقبال</span><span class="v">فارغ ${esc(recp.weightEmpty||'—')} · محمّل ${esc(recp.weightLoaded||'—')} · صافي ${truckNetWeight(recp)} كغ</span></div>`;
+  }
+  $('#sheetBody').innerHTML=`<div style="margin-bottom:12px">
+    <div style="font-family:'Reem Kufi';font-size:17px;font-weight:600">سلسلة الشاحنة <span class="mono">${esc(truck)}</span></div>
+    <div style="font-size:12px;color:var(--ink2);margin-top:4px">${complete?toneBadge('ok','السلسلة مكتملة'):toneBadge('warn','سلسلة ناقصة — راجع المراحل الحمراء')}</div>
+    ${chainDotsHtml(truck)}</div>
+    <div class="chain-timeline">${steps}</div>${extra}`;
+  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="chClose" style="flex:.6">إغلاق</button>
+    <button class="btn btn-ghost" id="chPdf" style="flex:1">${svg('doc',16)} PDF</button>
+    <button class="btn btn-pri" id="chScan">${svg('scan',16)} مسح</button>`;
+  $('#chClose').onclick=closeSheet;
+  $('#chPdf').onclick=()=>printTruckChainPdf(truck);
+  $('#chScan').onclick=()=>BarcodeScanner.open(v=>{ closeSheet(); openTruckChain(v); });
+  $('#sheetBody').querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.goto; closeSheet(); openRegister(k);
+    setTimeout(()=>{ FILTER=truck; $('#regSearch').value=truck; renderRegList(); },200);
+  });
+  openSheet('ترابط السجلات — شاحنة '+truck);
+}
+function openChainRegistry(){
+  const g=governanceStats();
+  const rows=g.gaps.length? g.gaps.map(x=>`
+    <button type="button" class="gov-gap" data-chain="${esc(x.truck)}">
+      <span class="mono" style="font-weight:700">${esc(x.truck)}</span>
+      <span style="color:var(--warn);margin-inline-start:auto">ناقص: ${esc(x.missing.join('، '))}</span>
+    </button>`).join('') : `<div class="alert-ok">${svg('quality',16)}<span>كل السلاسل المسجّلة مكتملة.</span></div>`;
+  const okList=allTrucksInChain().filter(isChainComplete).slice(0,8).map(t=>`
+    <button type="button" class="gov-gap" data-chain="${esc(t)}" style="border-color:var(--ok)">
+      <span class="mono" style="font-weight:700">${esc(t)}</span>${chainDotsHtml(t)}
+    </button>`).join('');
+  $('#sheetBody').innerHTML=`<div class="gov-meter" style="margin-bottom:14px">
+    <div class="top"><div style="font-size:13px;font-weight:600">لوحة امتثال الحوكمة</div>
+      <div class="pct ${g.pct>=90?'':(g.pct>=70?'warn':'bad')}">${g.pct}%</div></div>
+    <div class="bar"><i style="width:${g.pct}%"></i></div>
+    <div class="hint" style="margin-top:8px">${g.complete} سلسلة مكتملة · ${g.broken} بها فجوات · ${g.total} شاحنة مسجّلة</div></div>
+    ${g.broken?`<div style="font-size:12px;font-weight:700;color:var(--warn);margin-bottom:8px">سلاسل ناقصة</div>${rows}`:''}
+    ${okList?`<div style="font-size:12px;font-weight:700;color:var(--ok);margin:12px 0 8px">سلاسل مكتملة (عينة)</div>${okList}`:''}`;
+  $('#sheetFoot').innerHTML=`<button class="btn btn-ghost" id="crClose" style="flex:.6">إغلاق</button>
+    <button class="btn btn-pri" id="crGov">${svg('gov',16)} حوكمة البرنامج</button>`;
+  $('#crClose').onclick=closeSheet;
+  $('#crGov').onclick=()=>{ closeSheet(); openGovernance(); };
+  $('#sheetBody').querySelectorAll('[data-chain]').forEach(b=>b.onclick=()=>openTruckChain(b.dataset.chain));
+  openSheet('سلاسل الشاحنات والترابط');
+}
 function openGovernance(){
   const tag = s=> s==='on'
     ? '<span class="badge b-ok tag">مُفعَّل</span>'
@@ -1612,7 +2601,16 @@ function openGovernance(){
       <div class="gh"><div class="num">${i+1}</div><div class="gt">${esc(s.t)}</div></div>
       ${s.rules.map(r=>`<div class="govrule"><span class="dot"></span><span class="rt">${esc(r[0])}</span>${tag(r[1])}</div>`).join('')}
     </div>`).join('');
+  const g=governanceStats();
+  const gcls=g.pct>=90?'':(g.pct>=70?' warn':' bad');
   $('#govBody').innerHTML = `
+    <div class="gov-meter" style="margin-bottom:14px">
+      <div class="top"><div><div style="font-size:13px;font-weight:600">امتثال ترابط السجلات</div>
+        <div class="hint" style="margin-top:4px">فحص → تصدير → ترحيل → استقبال لكل شاحنة</div></div>
+        <div class="pct${gcls}">${g.pct}%</div></div>
+      <div class="bar"><i style="width:${g.pct}%"></i></div>
+      <button class="btn btn-pri" id="govChains" style="width:100%;margin-top:10px;justify-content:center">عرض سلاسل الشاحنات</button>
+    </div>
     <div class="gov-intro">
       <b>قواعد حوكمة برنامج تفريغ باخرة القمح السائب.</b> مشتقّة من الخطة التشغيلية المعتمدة، وتضبط طريقة استخدام البرنامج وسلامة بياناته. تُعتمد من رئيس الفريق ونائبه.
       <div class="gov-leg">
@@ -1622,17 +2620,215 @@ function openGovernance(){
     </div>
     ${secs}
     <div class="footnote" style="padding-top:8px">وثيقة تشغيلية داخلية — حوكمة البرنامج · ${esc(DB.meta.ship||'')}</div>`;
+  const gc=$('#govChains'); if(gc) gc.onclick=()=>openChainRegistry();
   show('gov');
 }
 
+/* ============ Barcode scanner (native ML Kit on Android + web camera fallback) ============ */
+function barcodePlugin(){
+  try{
+    const C=window.Capacitor;
+    return (C && C.Plugins && C.Plugins.BarcodeScanner) ? C.Plugins.BarcodeScanner : null;
+  }catch(e){ return null; }
+}
+function capacitorNative(){
+  try{ return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); }
+  catch(e){ return false; }
+}
+const BarcodeScanner = {
+  _stream:null, _timer:null, _active:false,
+  async ensureNativeReady(BS){
+    if(!BS || !capacitorNative()) return true;
+    try{
+      if(window.Capacitor.getPlatform()!=='android') return true;
+      if(!BS.isGoogleBarcodeScannerModuleAvailable) return true;
+      const mod=await BS.isGoogleBarcodeScannerModuleAvailable();
+      if(mod && mod.available) return true;
+      if(BS.installGoogleBarcodeScannerModule){
+        toast('جارٍ تجهيز ماسح الباركود من Google Play…');
+        await BS.installGoogleBarcodeScannerModule();
+        await new Promise(r=>setTimeout(r, 2500));
+      }
+    }catch(e){}
+    return true;
+  },
+  async nativeScan(){
+    const BS=barcodePlugin();
+    if(!BS || !capacitorNative()) return null;
+    try{
+      const sup=await BS.isSupported();
+      if(sup && sup.supported===false) return null;
+      await this.ensureNativeReady(BS);
+      if(BS.requestPermissions){
+        const perm=await BS.requestPermissions();
+        if(perm && perm.camera==='denied'){
+          toast('يُرجى السماح باستخدام الكاميرا من إعدادات التطبيق');
+          if(BS.openSettings) await BS.openSettings();
+          return null;
+        }
+      }
+      const res=await BS.scan({ autoZoom:true });
+      const bc=res && res.barcodes && res.barcodes[0];
+      if(bc) return String(bc.rawValue||bc.displayValue||'').trim();
+    }catch(e){
+      const msg=String((e&&e.message)||e||'');
+      if(/cancel/i.test(msg)) return null;
+    }
+    return null;
+  },
+  async openWeb(onResult){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      const manual=prompt('الماسح غير متاح — أدخل الرمز يدوياً:');
+      if(manual && onResult) onResult(String(manual).trim());
+      return;
+    }
+    const ov=document.createElement('div'); ov.className='scan-overlay'; ov.id='scanOv';
+    ov.innerHTML=`<div class="bar"><div class="t">مسح الباركود</div><button type="button" class="btn btn-ghost" id="scanClose" style="color:#F3ECDD;border-color:rgba(255,255,255,.2)">إغلاق</button></div>
+      <div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <video id="scanVideo" playsinline muted autoplay></video><div class="frame"></div></div>
+      <div class="hint">وجّه الكاميرا نحو باركود الشاحنة أو البطاقة الوظيفية</div>`;
+    document.body.appendChild(ov); document.body.style.overflow='hidden'; this._active=true;
+    const video=ov.querySelector('#scanVideo');
+    const close=()=>this.close();
+    ov.querySelector('#scanClose').onclick=close;
+    try{
+      this._stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+      video.srcObject=this._stream; await video.play();
+    }catch(e){ close(); toast('تعذّر فتح الكاميرا — أدخل الرقم يدوياً'); return; }
+    const detect=async()=>{
+      if(!this._active) return;
+      try{
+        if(typeof BarcodeDetector!=='undefined'){
+          const det=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','qr_code','codabar','itf']});
+          if(video.readyState>=2){
+            const codes=await det.detect(video);
+            if(codes && codes[0] && codes[0].rawValue){
+              const v=String(codes[0].rawValue).trim(); close();
+              if(onResult) onResult(v); toast('تم المسح: '+v); return;
+            }
+          }
+        }
+      }catch(e){}
+      this._timer=setTimeout(detect, 280);
+    };
+    detect();
+  },
+  async open(onResult){
+    if(this._active) return;
+    const native=await this.nativeScan();
+    if(native){
+      if(onResult) onResult(native);
+      toast('تم المسح: '+native);
+      return;
+    }
+    await this.openWeb(onResult);
+  },
+  close(){
+    this._active=false;
+    if(this._timer){ clearTimeout(this._timer); this._timer=null; }
+    if(this._stream){ this._stream.getTracks().forEach(t=>t.stop()); this._stream=null; }
+    const ov=document.getElementById('scanOv'); if(ov) ov.remove();
+    document.body.style.overflow='';
+  }
+};
+function scanIntoRegisterField(){
+  const truck=$('#f_truck');
+  BarcodeScanner.open(v=>{
+    if(truck){ truck.value=v; truck.dispatchEvent(new Event('change')); truck.dispatchEvent(new Event('blur')); return; }
+    const search=$('#regSearch');
+    if(search){ search.value=v; FILTER=v; renderRegList(); toast('بحث عن: '+v); return; }
+    toast('تم المسح: '+v);
+  });
+}
+
+/* ============ Device setup ============ */
+function openDeviceSetup(){
+  const gate=$('#deviceSetupGate'); if(!gate) return;
+  gate.classList.remove('hidden'); document.body.style.overflow='hidden';
+}
+function closeDeviceSetup(){ $('#deviceSetupGate').classList.add('hidden'); document.body.style.overflow=''; }
+async function configureDevice(mode){
+  DB.deviceSetup={mode, configured:true}; await saveDeviceSetup();
+  if(mode==='admin') await ensureSeedAdmin();
+  if(mode==='operator'){
+    if(prefs().mandatoryOperatorSync && !Sync.active()){
+      toast('يُفضَّل ضبط المزامنة من المشرف أولاً — يمكنك المسح من QR');
+    }
+    if(Sync.active()) await Sync.pullUsers();
+  }
+  closeDeviceSetup(); await openLogin();
+}
+safeOn('#setup_admin', ()=>configureDevice('admin'));
+safeOn('#setup_operator', ()=>configureDevice('operator'));
+
+/* ============ User provisioning (QR) ============ */
+function userProvisionPayload(u){
+  return ['WHEATOPS-USER','id='+u.id,'username='+u.username,'name='+u.name,'role='+u.role,'pass='+u.pass].join('\n');
+}
+function parseUserProvision(text){
+  if(!text || !String(text).includes('WHEATOPS-USER')) return null;
+  const lines=String(text).split(/\r?\n/); const o={};
+  lines.forEach(l=>{ const i=l.indexOf('='); if(i>0) o[l.slice(0,i).trim()]=l.slice(i+1).trim(); });
+  if(!o.username||!o.pass||!o.role) return null;
+  return { id:Number(o.id)||Date.now(), username:o.username.toLowerCase(), name:o.name||o.username,
+    role:o.role, pass:o.pass, active:true, mustChange:false, _t:nowTime(), _d:todayDate(), _by:'تفعيل QR' };
+}
+async function importProvisionedUser(data){
+  const existing=findUser(data.username);
+  if(existing){
+    Object.assign(existing,{name:data.name,role:data.role,pass:data.pass,active:true,mustChange:false});
+  } else {
+    DB.users.push(data);
+  }
+  await saveUsers();
+}
+function showUserProvisionQR(u){
+  if(!qrReady()){ toast('مكتبة QR غير جاهزة'); return; }
+  showQR('تفعيل حساب «'+(u.name||u.username)+'» على جهاز جديد', userProvisionPayload(u), 'user_'+u.username);
+  $('#sheetBody').insertAdjacentHTML('beforeend',
+    '<div class="hint" style="margin-top:12px">على جهاز الموظف: اختر «جهاز موظف ميداني» ثم «مسح QR تفعيل الحساب» وامسح هذا الرمز. بعدها يدخل باسمه وكلمة سره مباشرة إلى شاشته.</div>');
+}
+async function scanUserProvision(){
+  BarcodeScanner.open(async(raw)=>{
+    const data=parseUserProvision(raw);
+    if(!data){ toast('رمز التفعيل غير صالح'); return; }
+    await importProvisionedUser(data);
+    $('#lg_user').value=data.username;
+    toast('تم تفعيل الحساب — أدخل كلمة السر واضغط دخول');
+  });
+}
+
+/* ============ Role landing after login ============ */
+function goToRoleHome(u){
+  applyOperatorLayout();
+  if(isSupervisorRole(u.role)){ show('home'); renderHome(); return; }
+  const primary=ROLE_PRIMARY[u.role];
+  if(primary && canAccess(REGMAP[primary])){
+    renderHome();
+    setTimeout(()=>{ openRegister(primary); toast('مرحباً '+(u.name||u.username)+' — شاشتك جاهزة'); }, 200);
+  } else {
+    show('home'); renderHome(); toast('مرحباً '+(u.name||u.username));
+  }
+}
+
 /* ============ Login gate ============ */
-function openLogin(){
+async function openLogin(){
   const gate=$('#loginGate'); if(!gate) return;
   $('#lg_user').value=''; $('#lg_pass').value=''; $('#lg_err').textContent='';
   const admin=DB.users.find(u=>u.username==='admin');
-  $('#lg_hint').innerHTML = (admin && admin.mustChange)
-    ? 'أول تشغيل: ادخل باسم <b>admin</b> وكلمة السر <b>admin</b> ثم غيّرها فوراً من «المستخدمون».'
-    : 'أدخل بيانات حسابك. للمساعدة راجع مسؤول النظام.';
+  const op=isOperatorDevice();
+  const opEl=$('#lg_operator'); if(opEl) opEl.classList.toggle('hidden', !op);
+  if(op && Sync.active()){
+    $('#lg_hint').innerHTML='جارٍ تحميل الحسابات من المزامنة…';
+    await Sync.pullUsers();
+    $('#lg_hint').innerHTML='الحسابات تُحمَّل تلقائياً من جهاز المشرف — أدخل اسم المستخدم وكلمة السر.';
+  } else if(op){
+    $('#lg_hint').innerHTML='أدخل بيانات حسابك. فعّل المزامنة (نفس إعدادات المشرف) لتحميل الحساب تلقائياً، أو امسح QR التفعيل.';
+  } else if(admin && admin.mustChange){
+    $('#lg_hint').innerHTML='أول تشغيل (جهاز المشرف): ادخل باسم <b>admin</b> وكلمة السر <b>admin</b> ثم أنشئ مستخدمين لبقية الفريق.';
+  } else {
+    $('#lg_hint').innerHTML='أدخل بيانات حسابك.';
+  }
   gate.classList.remove('hidden');
   document.body.style.overflow='hidden';
   setTimeout(()=>$('#lg_user').focus(),60);
@@ -1642,15 +2838,35 @@ async function doLogin(){
   const uname=$('#lg_user').value.trim(), pass=$('#lg_pass').value;
   const err=$('#lg_err');
   const u=findUser(uname);
-  if(!u){ err.textContent='اسم المستخدم غير موجود'; return; }
+  if(!u){
+    if(isOperatorDevice() && Sync.active()){
+      await Sync.pullUsers();
+      const u2=findUser(uname);
+      if(u2){
+        if(u2.active===false){ err.textContent='الحساب موقوف. راجع مسؤول النظام.'; return; }
+        if(!(await verifyPass(pass, u2.pass))){ err.textContent='كلمة السر غير صحيحة'; return; }
+        DB.sessionUser=u2.username; await Store.set('session', u2.username);
+        applySession(); closeLogin(); goToRoleHome(u2); return;
+      }
+    }
+    err.textContent=isOperatorDevice()
+      ?'الحساب غير موجود — تأكد من المزامنة أو امسح QR التفعيل من المشرف'
+      :'اسم المستخدم غير موجود';
+    return;
+  }
   if(u.active===false){ err.textContent='الحساب موقوف. راجع مسؤول النظام.'; return; }
-  if(!(await verifyPass(pass, u.pass))){ err.textContent='كلمة السر غير صحيحة'; return; }
+  if(!(await verifyPass(pass, u.pass))){ err.textContent='كلمة السر غير صحيحة'; await logFailedLogin(uname); return; }
+  if(isOperatorDevice() && prefs().mandatoryOperatorSync && !Sync.active()){
+    err.textContent='يجب تفعيل المزامنة على جهاز الموظف — راجع المشرف'; return;
+  }
   DB.sessionUser=u.username; await Store.set('session', u.username);
-  applySession(); closeLogin(); show('home'); renderHome();
-  toast('مرحباً '+(u.name||u.username));
+  applySession(); closeLogin();
+  if(u.mustChange){ openChangePassword(u); return; }
+  goToRoleHome(u);
 }
-$('#lg_btn').onclick=doLogin;
-$('#lg_pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+safeOn('#lg_btn', doLogin);
+const _lgPass=$('#lg_pass'); if(_lgPass) _lgPass.addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+safeOn('#lg_scan_user', scanUserProvision);
 async function doLogout(){
   DB.sessionUser=null; await Store.set('session', null);
   closeSheet(); show('home'); openLogin();
@@ -1714,10 +2930,205 @@ function openUserForm(u){
     }
     await saveUsers();
     if(currentUser()) applySession();
-    openUsers(); renderHome(); toast('تم حفظ المستخدم');
+    if(!isEdit){
+      const saved=DB.users[DB.users.length-1];
+      showUserProvisionQR(saved);
+      toast('تم إنشاء المستخدم — امسح QR التفعيل على جهاز الموظف');
+    } else {
+      openUsers(); toast('تم حفظ المستخدم');
+    }
+    renderHome();
   };
+  if(isEdit){
+    $('#sheetFoot').insertAdjacentHTML('afterbegin',
+      '<button class="btn btn-ghost" id="u_qr" style="flex:1;justify-content:center">QR تفعيل</button>');
+    $('#u_qr').onclick=()=>showUserProvisionQR(u);
+  }
   openSheet(isEdit?'تعديل مستخدم':'مستخدم جديد');
 }
+
+/* ============ v1.8 extended features ============ */
+async function shareText(title, text){
+  try{ const S=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Share;
+    if(S){ await S.share({title, text, dialogTitle:title}); return; }
+  }catch(e){}
+  if(navigator.share){ try{ await navigator.share({title,text}); return; }catch(e){} }
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+function exportAllExcel(){
+  const rows=[['السجل','الحقول...']];
+  REGS.forEach(r=>{
+    const data=DB.reg[r.key]||[]; if(!data.length) return;
+    if(r.isChecklist){
+      rows.push([r.title]); rows.push(['الفاحص','الشاحنة','التاريخ',...checklistItems(),'ملاحظات']);
+      data.forEach(rec=>rows.push([rec.inspector,rec.truck,rec.date,...rec.items.map(x=>x.ok?'نعم':'لا'),rec.notes]));
+    } else {
+      rows.push([r.title]); rows.push(r.fields.map(f=>f.l).concat(['الوقت','التاريخ','المناوب']));
+      data.forEach(rec=>rows.push(r.fields.map(f=>f.t==='photo'?(rec[f.n]?'[صورة]':'') : rec[f.n]).concat([rec._t,rec._d,rec._by])));
+    }
+    rows.push([]);
+  });
+  downloadCsv('wheat-ops-كل-السجلات-'+todayDate()+'.csv', rows);
+  toast('تم تصدير ملف Excel/CSV موحّد');
+}
+async function exportEncryptedBackup(){
+  const payload={v:APP_VERSION, date:todayDate(), meta:DB.meta, reg:DB.reg, handovers:DB.handovers, users:DB.users.map(u=>({...u,pass:'[redacted]'}))};
+  const json=JSON.stringify(payload);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='wheat-ops-backup-'+todayDate()+'.json'; a.click();
+  DB.meta.lastBackupDate=todayDate(); await saveMeta(); audit('نسخ احتياطي','JSON');
+  toast('تم حفظ النسخة الاحتياطية');
+}
+function importEncryptedBackup(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json,.json';
+  inp.onchange=async()=>{
+    const f=inp.files[0]; if(!f) return;
+    try{
+      const data=JSON.parse(await f.text());
+      if(!data||!data.reg){ toast('ملف غير صالح'); return; }
+      if(!confirm('استعادة البيانات ستدمج السجلات. متابعة؟')) return;
+      Object.keys(data.reg).forEach(k=>{ if(DB.reg[k]) DB.reg[k]=unionById(DB.reg[k],data.reg[k]); else DB.reg[k]=data.reg[k]; });
+      for(const r of REGS) await saveReg(r.key);
+      if(data.meta) DB.meta=Object.assign({},DB.meta,data.meta); await saveMeta(); applyPrefs();
+      audit('استعادة نسخة','من ملف'); renderHome(); toast('تمت الاستعادة');
+    }catch(e){ toast('تعذّرت قراءة الملف'); }
+  };
+  inp.click();
+}
+function openAuditLog(){
+  const rows=(DB.auditLog||[]).slice().reverse().slice(0,80).map(e=>
+    `<div class="rline"><span class="k">${esc(e.d)} ${esc(e.t)} · ${esc(e.user)}</span><span class="v">${esc(e.action)} ${esc(e.detail)}</span></div>`).join('');
+  $('#sheetBody').innerHTML=rows||'<div class="empty"><p>لا سجلات تدقيق بعد.</p></div>';
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="alClose" style="width:100%">إغلاق</button>';
+  $('#alClose').onclick=closeSheet; openSheet('سجل التدقيق');
+}
+function openLoginFailLog(){
+  const rows=(DB.loginFails||[]).slice().reverse().slice(0,50).map(e=>
+    `<div class="rline"><span class="k">${esc(e.d)} ${esc(e.t)}</span><span class="v mono">${esc(e.username)}</span></div>`).join('');
+  $('#sheetBody').innerHTML=rows||'<div class="empty"><p>لا محاولات فاشلة.</p></div>';
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="lfClose" style="width:100%">إغلاق</button>';
+  $('#lfClose').onclick=closeSheet; openSheet('محاولات دخول فاشلة');
+}
+function openFinanceMonthlyReport(){
+  const m=todayDate().slice(0,7);
+  const rows=(DB.reg.finance||[]).filter(x=>(x.date||x._d||'').slice(0,7)===m);
+  const total=rows.filter(x=>x.approval==='معتمد').reduce((a,x)=>a+(Number(x.amount)||0),0);
+  const byCat={};
+  rows.forEach(x=>{ const c=x.expenseCat||'أخرى'; byCat[c]=(byCat[c]||0)+(Number(x.amount)||0); });
+  const lines=Object.entries(byCat).map(([k,v])=>`<div class="rline"><span class="k">${esc(k)}</span><span class="v mono">${v.toLocaleString('ar-SA')} ريال</span></div>`).join('');
+  $('#sheetBody').innerHTML=`<div style="font-weight:600;margin-bottom:10px">تقرير مالي — ${esc(m)}</div>
+    <div class="rline"><span class="k">إجمالي معتمد</span><span class="v mono">${total.toLocaleString('ar-SA')} ريال</span></div>
+    <div class="rline"><span class="k">عدد السجلات</span><span class="v">${rows.length}</span></div>${lines}
+    <button class="btn btn-ghost" id="fin_print" style="width:100%;margin-top:12px;justify-content:center">طباعة التقرير</button>`;
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="finClose" style="width:100%">إغلاق</button>';
+  $('#finClose').onclick=closeSheet;
+  $('#fin_print').onclick=()=>{ const w=window.open('','_blank'); w.document.write('<html dir="rtl"><body style="font-family:sans-serif;padding:20px"><h2>تقرير مالي '+m+'</h2><p>الإجمالي: '+total+' ريال</p></body></html>'); w.print(); };
+  openSheet('التقرير المالي الشهري');
+}
+function openGlobalSearch(){
+  $('#sheetBody').innerHTML=`<div class="field"><label>بحث برقم الشاحنة</label>
+    <div class="scanrow"><input id="gs_truck" placeholder="رقم الشاحنة"><button type="button" class="btn-scan" id="gs_scan">${svg('scan',20)}</button></div></div>
+    <div id="gs_results" class="hint" style="margin-top:10px"></div>`;
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="gsClose" style="flex:.6">إغلاق</button><button class="btn btn-pri" id="gs_go">عرض السلسلة</button>';
+  $('#gsClose').onclick=closeSheet;
+  $('#gs_scan').onclick=()=>BarcodeScanner.open(v=>{ $('#gs_truck').value=v; runGlobalSearch(v); });
+  $('#gs_go').onclick=()=>runGlobalSearch($('#gs_truck').value.trim());
+  $('#gs_truck').onkeydown=e=>{ if(e.key==='Enter') runGlobalSearch($('#gs_truck').value.trim()); };
+  openSheet('بحث شاحنة — كل السجلات');
+}
+function runGlobalSearch(truck){
+  truck=normTruck(truck); const el=$('#gs_results'); if(!el) return;
+  if(!truck){ el.textContent='أدخل رقم الشاحنة'; return; }
+  const hits=[];
+  REGS.forEach(r=>{ (DB.reg[r.key]||[]).forEach(rec=>{ if(normTruck(rec.truck)===truck) hits.push(r.title+' · '+rec._d+' '+rec._t); }); });
+  el.innerHTML=hits.length? hits.map(h=>'<div>• '+esc(h)+'</div>').join('') : 'لا نتائج لهذه الشاحنة';
+  $('#gs_go').onclick=()=>{ closeSheet(); openTruckChain(truck); };
+}
+function openNewTruckFlow(){
+  let truck='';
+  $('#sheetBody').innerHTML=`<div class="hint" style="margin-bottom:12px">تدفق سريع: فحص ثم تصدير لشاحنة جديدة</div>
+    <div class="field"><label>رقم الشاحنة</label><div class="scanrow"><input id="nt_truck"><button type="button" class="btn-scan" id="nt_scan">${svg('scan',20)}</button></div></div>`;
+  $('#sheetFoot').innerHTML='<button class="btn btn-ghost" id="ntCancel" style="flex:.6">إلغاء</button><button class="btn btn-pri" id="ntStart">بدء الفحص</button>';
+  $('#ntCancel').onclick=closeSheet;
+  $('#nt_scan').onclick=()=>BarcodeScanner.open(v=>{ $('#nt_truck').value=v; truck=v; });
+  $('#ntStart').onclick=()=>{
+    truck=normTruck($('#nt_truck').value); if(!truck){ toast('أدخل رقم الشاحنة'); return; }
+    closeSheet(); openRegister('checklist');
+    setTimeout(()=>{ openChecklistForm(); const t=$('#f_truck'); if(t) t.value=truck; toast('أكمل الفحص ثم سيُفتح التصدير'); },300);
+  };
+  openSheet('شاحنة جديدة');
+}
+function printTruckChainPdf(truck){
+  const chain=buildTruckChain(truck);
+  const w=window.open('','_blank');
+  let html='<html dir="rtl"><head><meta charset="utf-8"><title>شاحنة '+truck+'</title></head><body style="font-family:sans-serif;padding:16px">';
+  html+='<h2>سلسلة الشاحنة '+truck+'</h2><p>باخرة: '+esc(DB.meta.ship)+' · '+todayDate()+'</p>';
+  CHAIN_STAGES.forEach(s=>{ const rec=chain[s.key]; html+='<h3>'+s.label+'</h3><pre>'+(rec?JSON.stringify(rec,null,2):'—')+'</pre>'; });
+  html+='</body></html>'; w.document.write(html); w.document.close(); w.print();
+}
+async function archiveOldRecords(){
+  const days=Number(prefs().retentionDays)||0; if(!days) return;
+  const cut=new Date(); cut.setDate(cut.getDate()-days); const cutStr=cut.toISOString().slice(0,10);
+  let moved=0;
+  if(!DB.archive) DB.archive={regs:{}};
+  REGS.forEach(r=>{
+    const keep=[], arch=[];
+    (DB.reg[r.key]||[]).forEach(rec=>{ if((rec._d||rec.date||todayDate())<cutStr) arch.push(rec); else keep.push(rec); });
+    if(arch.length){ DB.archive.regs[r.key]=(DB.archive.regs[r.key]||[]).concat(arch); DB.reg[r.key]=keep; moved+=arch.length; saveReg(r.key); }
+  });
+  if(moved){ await Store.set('archive',DB.archive); audit('أرشفة',moved+' سجل'); }
+}
+async function maybeDailyBackup(){
+  if(!prefs().autoBackupDaily) return;
+  if(DB.meta.lastBackupDate===todayDate()) return;
+  const payload={v:APP_VERSION, date:todayDate(), meta:DB.meta, reg:DB.reg, handovers:DB.handovers};
+  await Store.set('autoBackup', payload);
+  DB.meta.lastBackupDate=todayDate(); await saveMeta();
+  audit('نسخ تلقائي','محلي');
+}
+function openChangePassword(u){
+  $('#sheetBody').innerHTML=`<div class="hint" style="margin-bottom:12px">يجب تغيير كلمة السر قبل المتابعة</div>
+    <div class="field"><label>كلمة سر جديدة</label><input id="cp_pass" type="password"></div>
+    <div class="field"><label>تأكيد</label><input id="cp_pass2" type="password"></div>`;
+  $('#sheetFoot').innerHTML='<button class="btn btn-pri" id="cp_save" style="width:100%">حفظ ومتابعة</button>';
+  $('#cp_save').onclick=async()=>{
+    const p1=$('#cp_pass').value, p2=$('#cp_pass2').value;
+    if(!p1||p1.length<4){ toast('كلمة سر قصيرة'); return; }
+    if(p1!==p2){ toast('التأكيد غير متطابق'); return; }
+    u.pass=await hashPass(p1); u.mustChange=false; await saveUsers(); closeSheet(); goToRoleHome(u); toast('تم تغيير كلمة السر');
+  };
+  openSheet('تغيير كلمة السر');
+}
+function needsPinUnlock(){
+  const h=prefs().appPinHash; return !!(h && !DB.pinUnlocked);
+}
+async function continueAfterPin(){
+  if(currentUser()){
+    applySession(); applyOperatorLayout();
+    const u=currentUser();
+    if(u && u.mustChange){ openChangePassword(u); return; }
+    if(u && !isSupervisorRole(u.role) && ROLE_PRIMARY[u.role]) goToRoleHome(u);
+    else renderHome();
+  } else if(!DB.deviceSetup || !DB.deviceSetup.configured){ openDeviceSetup(); }
+  else { await openLogin(); }
+}
+async function checkPin(){
+  const v=$('#pin_input').value; const h=prefs().appPinHash;
+  if((await hashPass(v))===h){ DB.pinUnlocked=true; $('#pinGate').classList.add('hidden'); document.body.style.overflow=''; await continueAfterPin(); return true; }
+  $('#pin_err').textContent='رمز غير صحيح'; await logFailedLogin('pin'); return false;
+}
+function showPinGate(){
+  if(!needsPinUnlock()) return;
+  $('#pinGate').classList.remove('hidden'); document.body.style.overflow='hidden';
+  $('#pin_input').value=''; $('#pin_err').textContent='';
+  setTimeout(()=>$('#pin_input').focus(),60);
+}
+const _pinUnlock=$('#pin_unlock'), _pinInput=$('#pin_input');
+if(_pinUnlock) _pinUnlock.onclick=checkPin;
+if(_pinInput) _pinInput.addEventListener('keydown',e=>{ if(e.key==='Enter') checkPin(); });
+const _gsBtn=$('#globalSearchBtn'), _ntBtn=$('#newTruckBtn');
+if(_gsBtn) _gsBtn.onclick=openGlobalSearch;
+if(_ntBtn) _ntBtn.onclick=openNewTruckFlow;
 
 /* ============ Native (Capacitor) integration ============ */
 /* When running inside the Android app, tint the system status bar to match the
@@ -1749,12 +3160,31 @@ if('serviceWorker' in navigator && !isNativeApp && (location.protocol==='http:' 
 document.addEventListener('deviceready', initNative, false);
 if(window.Capacitor){ initNative(); }
 (async function init(){
-  await loadAll();
-  if(!DB.meta.startDate){ DB.meta.startDate=todayDate(); }
-  renderHome();
-  if(currentUser()){ applySession(); renderHome(); }
-  else { openLogin(); }
-  try{ Sync.load(); if(Sync.active()) Sync.start(); }catch(e){}
+  try{
+    resetOverlays();
+    await loadAll();
+    if(!DB.meta.startDate){ DB.meta.startDate=todayDate(); }
+    try{ Sync.load(); if(Sync.active()){ Sync.start(); if(isOperatorDevice() && !currentUser()) await Sync.pullUsers(); } }catch(e){}
+    try{ await archiveOldRecords(); }catch(e){}
+    try{ await maybeDailyBackup(); }catch(e){}
+    if(needsPinUnlock()){ showPinGate(); window.__WO_READY=true; return; }
+    if(currentUser()){
+      applySession(); applyOperatorLayout();
+      const u=currentUser();
+      if(u && u.mustChange){ openChangePassword(u); window.__WO_READY=true; return; }
+      if(u && !isSupervisorRole(u.role) && ROLE_PRIMARY[u.role]) goToRoleHome(u);
+      else renderHome();
+    } else if(!DB.deviceSetup || !DB.deviceSetup.configured){ openDeviceSetup(); }
+    else { await openLogin(); }
+    ensureHomeInteractive();
+    window.__WO_READY=true;
+    const bf=document.getElementById('__boot_fail'); if(bf) bf.remove();
+  }catch(e){
+    console.error(e);
+    try{ ensureHomeInteractive(); }catch(_){}
+    window.__WO_READY=true;
+    toast('خطأ تشغيل — أعد فتح التطبيق');
+  }
 })();
 </script>
 </body>

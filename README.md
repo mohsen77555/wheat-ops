@@ -27,7 +27,9 @@ scripts/gen-icons.mjs Rasterizes resources/*.svg into PNG icons
 ## Install directly on your phone (ready-made APK)
 
 A ready-to-install debug APK is published in this repo:
-[`dist/wheat-ops-1.6.0.apk`](dist/wheat-ops-1.6.0.apk).
+[`dist/wheat-ops-1.7.4.apk`](dist/wheat-ops-1.7.4.apk) (weight matching, governance, record chains, barcode scanner, smart finance).
+
+Older build: [`dist/wheat-ops-1.6.0.apk`](dist/wheat-ops-1.6.0.apk).
 
 **First login:** username `admin`, password `admin` — then change it / add your team
 from Settings → "إدارة المستخدمين والصلاحيات".
